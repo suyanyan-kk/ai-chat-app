@@ -1,4 +1,3 @@
-<!-- src/views/chat.vue -->
 <template>
   <div class="chat-page">
     <div class="chat-header">
@@ -11,18 +10,20 @@
         <n-card
           v-for="(msg, index) in messages"
           :key="index"
+          content-style="padding: 8px 12px;"
           :style="{
-          maxWidth: '70%',
-          alignSelf: msg.isUser ? 'flex-end' : 'flex-start'
-          }"
+           maxWidth: '70%',
+           width: 'fit-content',
+           wordBreak: 'break-word',
+           alignSelf: msg.isUser ? 'flex-end' : 'flex-start'
+            }"
           :class="['msg', msg.isUser ? 'msg-user' : 'msg-bot']"
         >
 
           <div v-html="renderMarkdown(msg.text)" ></div>
+          <!-- ⭐ AI 正在输出时的光标 -->
+          <span v-if="msg.loading" class="cursor">▌</span>
         </n-card>
-        <n-spin v-if="loading" size="small">
-          <div style="padding: 8px;">AI 正在思考...</div>
-        </n-spin>
       </div>
 
       <div class="chat-input">
@@ -62,7 +63,43 @@ const scrollToBottom = async () => {
     msgList.value.scrollTop = msgList.value.scrollHeight;
   }
 };
+// 文本打字机效果
+// ⭐ 简单版本，直接逐字更新整个文本 会卡顿
+// const typeWriter = async (text, target) => {
+//   for (let char of text) {
+//     target.text += char
+//     await new Promise(resolve => setTimeout(resolve, 20)) // 速度可调
+//   }
+// }
 
+let queue = []
+let isTyping = false
+
+const typeWriter = async (target) => {
+  if (isTyping) return
+  isTyping = true
+
+  while (queue.length > 0) {
+    const text = queue.shift()
+
+    for (let char of text) {
+      target.text += char
+      smartScroll()
+      await new Promise(r => setTimeout(r, 10 + Math.random() * 20))
+    }
+  }
+
+  isTyping = false
+}
+let lastScroll = Date.now()
+// ⭐ 优化滚动频率，避免每个字符都触发滚动导致性能问题
+const smartScroll = () => {
+  const now = Date.now()
+  if (now - lastScroll > 100) {
+    scrollToBottom()
+    lastScroll = now
+  }
+}
 const sendMessage = async () => {
   const value = newMessage.value.trim()
   if (!value) return
@@ -74,30 +111,34 @@ const sendMessage = async () => {
 
   await scrollToBottom()
 
-  // AI消息先插入一个空的
-  let aiMessage = reactive({ text: "", isUser: false })
+  // AI消息先插入一个空的 
+  // ⭐关键，后续通过修改这个对象的text属性来实现流式更新
+  let aiMessage = reactive({ text: "", isUser: false,loading: true })
   messages.value.push(aiMessage)
 
   await scrollToBottom()
    loading.value = true
   try {
-      let fullText = ""
+      // let fullText = ""
     await chatStream(value, async chunk => {
 
-      fullText += chunk   // 实时更新
+      // fullText += chunk   // 实时更新
       // messages.value = [...messages.value]   // ⭐ 强制触发响应式
-      aiMessage.text = fullText   // 每次重新渲染
-      await nextTick()
-      scrollToBottom()
+      // aiMessage.text = fullText   // 每次重新渲染
+      // await typeWriter(chunk, aiMessage)  // 打字机效果逐字更新
+       queue.push(chunk) 
+       typeWriter(aiMessage)
+      
     })
 
   } catch (error) {
     aiMessage.text = "抱歉，获取回复失败"
   }finally {
-    loading.value = false
+    aiMessage.loading = false 
   }
 
 }
+
 onUpdated(() => {
   addCopyButtons()
 })
@@ -149,6 +190,7 @@ onMounted(() => {
 }
 
 .msg {
+  display: inline-block;   /* ⭐进一步确保自适应 */
   max-width: 68%;
   border-radius: 16px;
   font-size: 1rem;
@@ -156,7 +198,10 @@ onMounted(() => {
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.10);
   backdrop-filter: blur(10px);
 }
-
+.msg :deep(pre) {
+  max-width: 100%;
+  overflow-x: auto;
+}
 .msg-user {
   /* align-self: flex-end; */
   background: rgba(119, 103, 255, 0.22);
@@ -164,7 +209,7 @@ onMounted(() => {
   color: rgba(240, 244, 255, 0.95);
   text-align: right;
 }
-
+/* loading */
 .msg-bot {
   align-self: flex-start;
   background: rgba(255, 255, 255, 0.06);
@@ -172,7 +217,18 @@ onMounted(() => {
   color: rgba(230, 235, 255, 0.87);
   text-align: left;
 }
+.cursor {
+  display: inline-block;
+  margin-left: 2px;
+  animation: blink 1s infinite;
+  opacity: 1;
+}
 
+@keyframes blink {
+  0% { opacity: 1 }
+  50% { opacity: 0 }
+  100% { opacity: 1 }
+}
 
 .chat-input {
   display: flex;
@@ -197,14 +253,14 @@ onMounted(() => {
 .chat-input :deep(.n-input__input-el),
 .chat-input :deep(.n-input__textarea-el) {
   color: rgba(244, 248, 255, 0.92) !important;   /* 输入文字 */
+  padding: 6px 5px !important;
+  line-height: 1.9;
 }
 
 .chat-input :deep(.n-input__placeholder) {
   color: rgba(255, 255, 255, 0.4) !important; /* placeholder */
 }
-.chat-message :deep(.n-card__content) {
-  padding: 0px 0px !important;
-}
+
 .chat-input input {
   flex: 1;
 }
@@ -228,7 +284,45 @@ onMounted(() => {
   transform: translateY(-1px);
   box-shadow: 0 8px 18px rgba(58, 228, 255, 0.3);
 }
+/* 消息样式 */
+.msg :deep(p) {
+  margin: 6px 0;
+}
 
+.msg :deep(pre) {
+  margin: 8px 0;
+}
+
+.msg :deep(code) {
+  font-size: 0.9em;
+}
+
+.msg :deep(ul),
+.msg :deep(ol) {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+
+.msg :deep(h1),
+.msg :deep(h2),
+.msg :deep(h3) {
+  margin: 10px 0 6px;
+}
+/* 代码块样式 */
+.msg :deep(pre) {
+  background: #0d1117;
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.msg :deep(code) {
+  font-size: 0.9em;
+}
+
+.msg :deep(p) {
+  margin: 6px 0;
+}
 /* 手机/窄屏 */
 @media (max-width: 720px) {
   .msg {
