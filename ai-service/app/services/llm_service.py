@@ -1,9 +1,8 @@
 import os
 from dotenv import load_dotenv
-load_dotenv()
-
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
+load_dotenv()
 
 deepSeek_api_key = os.getenv("DEEPSEEK_API_KEY")
 deepSeek_base_url = os.getenv("DEEPSEEK_BASE_URL")
@@ -24,6 +23,10 @@ def stream_llm(message):
     ]):
 
         if chunk.content:
+            # 每当接收到新的内容块时，yield 返回给前端
+            # 这里可以根据需要对 chunk.content 进行处理，比如过滤掉空内容或者添加一些格式
+            # 注意：yield 只能返回字符串类型，如果 chunk.content 是其他类型，需要先转换成字符串
+            # 例如，如果 chunk.content 是一个字典，可以使用 json.dumps(chunk.content) 转换成 JSON 字符串
             yield chunk.content 
 
 def ask_llm(message: str):
@@ -31,16 +34,3 @@ def ask_llm(message: str):
         HumanMessage(content=message)
     ])
     return response.content
-# 如果想指定模型可以这样写
-# llm = ChatOpenAI(model_name="gpt-4")
-
-# 直接提供问题，并调用 llm
-# 向模型提问
-# 这里是 LangChain 统一的调用方式：
-# response = llm.invoke("你好")
-
-# 打印完整响应对象
-# print(response)
-
-# 打印模型返回的文本内容
-# print(response.content)

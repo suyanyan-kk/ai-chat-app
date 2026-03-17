@@ -9,7 +9,6 @@
 // 流式聊天
 
 import { streamRequest } from "./streamRequest"
-
 export function chatStream(message, onMessage) {
   return streamRequest("/chat-stream", { message }, onMessage)
 }
