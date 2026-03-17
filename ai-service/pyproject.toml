@@ -1,0 +1,14 @@
+[project]
+name = "ai-service"
+version = "0.1.0"
+description = "AI Service"
+readme = "README.md"
+requires-python = ">=3.11"
+
+dependencies = [
+    "fastapi>=0.135.1",
+    "langchain>=1.2.12",
+    "langchain-openai>=1.1.11",
+    "python-dotenv>=1.2.2",
+    "uvicorn>=0.41.0"
+]
