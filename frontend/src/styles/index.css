@@ -5,3 +5,14 @@
 :root {
   --primary-color: #4f46e5;
 }
+.n-collapse-item__header {
+  color: red;
+}
+
+.n-collapse-item__header-extra {
+  color: blue;
+}
+
+.n-collapse-item__content {
+  color: green;
+}

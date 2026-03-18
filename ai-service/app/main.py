@@ -15,15 +15,18 @@ async def chat_stream(data: dict):
         media_type="text/plain"
     )
 
-
-@app.get("/")
-def read_root():
-    return {"message": "AI Service is running"}
+@app.get("/langchain-practice")
+def langchain_practice():
+    return {"message": "LangChain Practice"}
 
 @app.post("/chat")
 def chat(data: dict):
     answer = ask_llm(data["message"])
     return {"answer": answer}
+
+@app.get("/")
+def read_root():
+    return {"message": "AI Service is running"}
 
 
 def dev():

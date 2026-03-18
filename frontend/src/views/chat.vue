@@ -37,7 +37,7 @@
 
 <script setup>
 import { ref, nextTick, onMounted, reactive, onUpdated } from "vue";
-import { chatStream } from "@/api";
+import { chatStream, langchainPractice } from "@/api";
 import ChatMessage from '@/components/chat/ChatMessage.vue'
 const messages = ref([
   { type: "markdown", text: "Hello, this is a chat message.", isUser: false },
@@ -118,7 +118,10 @@ const sendMessage = async () => {
   await scrollToBottom();
   loading.value = true;
   try {
-    await chatStream(value, async (chunk) => {
+    // ⭐ 这里的流式接口需要后端配合，逐步返回数据
+    // await chatStream(value, async (chunk) => {
+    // 提示词模版练习接口
+    await langchainPractice(value, async (chunk) => {
       queue.push(chunk);
       // 每次收到新数据时尝试触发打字机效果，如果正在打字则会排队等候
       typeWriter(aiMessage);

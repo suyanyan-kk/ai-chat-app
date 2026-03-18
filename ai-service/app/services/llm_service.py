@@ -2,6 +2,12 @@ import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
+# 提示词模版相关
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+# 记忆相关
+from langchain.memory import ConversationBufferMemory
+from langchain.agents import create_agent
+
 load_dotenv()
 
 deepSeek_api_key = os.getenv("DEEPSEEK_API_KEY")
@@ -16,6 +22,21 @@ chain = ChatOpenAI(
     max_tokens=100   # ✅ 限制最多生成 500 token
 )
 
+
+# 定义一个工具函数，模拟获取天气信息
+def get_weather(city: str) -> str:
+    """获取指定城市的天气。"""
+    return f"{city}总是阳光明媚！"
+
+agent = chain.create_agent(
+    tools=[get_weather],
+    system_prompt="你是一个乐于助人的助手",
+)
+
+# 运行代理
+agent.invoke(
+    {"messages": [{"role": "user", "content": "北京的天气怎么样"}]}
+)
 
 def stream_llm(message):
 

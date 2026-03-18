@@ -1,44 +1,24 @@
-<script setup>
-import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
-
-const sidebarOpen = ref(false);
-const route = useRoute();
-
-const toggleSidebar = () => {
-  sidebarOpen.value = !sidebarOpen.value;
-};
-
-const closeSidebar = () => {
-  sidebarOpen.value = false;
-};
-
-const handleResize = () => {
-  if (window.innerWidth >= 1024) {
-    sidebarOpen.value = false;
-  }
-};
-
-onMounted(() => {
-  handleResize();
-  window.addEventListener('resize', handleResize);
-});
-</script>
 
 <template>
   <div class="layout">
     <aside :class="['sidebar', { open: sidebarOpen }]">
       <div class="sidebar-header">
         <span class="brand">deepseek</span>
-        <button class="close-btn" @click="toggleSidebar" aria-label="Close sidebar">×</button>
+        <button class="close-btn" @click="toggleSidebar" aria-label="Close sidebar">
+          ×
+        </button>
       </div>
 
       <nav class="menu">
-        <router-link to="/" class="menu-item" active-class="active" @click="closeSidebar">
-          聊天
-        </router-link>
-        <router-link to="/about" class="menu-item" active-class="active" @click="closeSidebar">
-          关于
+        <router-link
+          v-for="route in navRoutes"
+          :key="route.path"
+          :to="route.path"
+          class="menu-item"
+          active-class="active"
+          @click="closeSidebar"
+        >
+          {{ route.meta.title }}
         </router-link>
       </nav>
     </aside>
@@ -51,7 +31,7 @@ onMounted(() => {
           <span />
         </button>
         <div class="topbar-title">
-          {{ route.path === '/' ? '聊天' : '关于' }}
+          {{ pageTitle }}
         </div>
       </header>
 
@@ -63,6 +43,37 @@ onMounted(() => {
     <div class="mask" v-if="sidebarOpen" @click="closeSidebar" />
   </div>
 </template>
+<script setup>
+import { ref, computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
+
+const sidebarOpen = ref(false);
+
+// 当前路由（用于标题）
+const route = useRoute();
+
+// ✅ 正确拿路由表
+const router = useRouter();
+const routes = router.options.routes;
+
+// ✅ 过滤 + 排序（推荐写法）
+const navRoutes = computed(() =>
+  routes
+    .filter(r => r.meta?.title && !r.meta?.hidden)
+    .sort((a, b) => (a.meta?.order || 0) - (b.meta?.order || 0))
+);
+
+// ✅ 顶部标题（自动根据路由变化）
+const pageTitle = computed(() => route.meta?.title || "默认标题");
+
+const toggleSidebar = () => {
+  sidebarOpen.value = !sidebarOpen.value;
+};
+
+const closeSidebar = () => {
+  sidebarOpen.value = false;
+};
+</script>
 <style scoped>
 .layout {
   height: 100vh;
@@ -196,7 +207,7 @@ onMounted(() => {
   flex: 1;
   box-sizing: border-box;
   padding: 26px;
-  overflow: hidden; /* 这里禁止浏览器滚动 */;
+  overflow: hidden; /* 这里禁止浏览器滚动 */
   width: 100%;
   margin: 0 auto;
 }
