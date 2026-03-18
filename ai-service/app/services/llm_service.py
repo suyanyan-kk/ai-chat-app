@@ -12,7 +12,8 @@ chain = ChatOpenAI(
     model="deepseek-chat",
     base_url=deepSeek_base_url,
     api_key= deepSeek_api_key,
-    streaming=True
+    streaming=True,
+    max_tokens=100   # ✅ 限制最多生成 500 token
 )
 
 

@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
-import './style.css'
+import "@/styles/index.css"
+import "github-markdown-css/github-markdown.css"
 import App from './App.vue'
 import router from './router'  
 import naive from 'naive-ui'

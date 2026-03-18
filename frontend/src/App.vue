@@ -208,40 +208,4 @@ onMounted(() => {
   z-index: 1;
   pointer-events: auto;
 }
-
-/* ====== responsive ====== */
-@media (max-width: 960px) {
-  .layout {
-    flex-direction: column;
-  }
-
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    transform: translateX(-100%);
-    box-shadow: 0 30px 45px rgba(0, 0, 0, 0.5);
-  }
-
-  .sidebar.open {
-    transform: translateX(0);
-  }
-
-  .close-btn {
-    display: inline-flex;
-  }
-
-  .hamburger {
-    display: inline-flex;
-  }
-
-  .topbar-title {
-    margin-left: 10px;
-  }
-
-  .content {
-    padding: 18px;
-  }
-}
 </style>
