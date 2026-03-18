@@ -1,0 +1,40 @@
+
+/* =========================
+   主题变量（默认：亮色）
+========================= */
+:root {
+  /* 颜色 */
+  --color-primary: #4f46e5;
+  --color-bg: #ffffff;
+  --color-bg-soft: #f7f7f8;
+  --color-text: #1f2328;
+  --color-text-secondary: #6b7280;
+  --color-border: #e5e7eb;
+
+  /* 代码块 */
+  --color-code-bg: #282c34;
+  --color-code-text: #abb2bf;
+
+  /* 间距 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+
+  /* 圆角 */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+/* 暗色主题 */
+:root[data-theme="dark"] {
+  --color-bg: #18181b;
+  --color-text: #e5e7eb;
+  --color-border: #333;
+
+  --color-code-bg: #1e1e1e;
+}
+/* document.documentElement.setAttribute("data-theme", "dark") */

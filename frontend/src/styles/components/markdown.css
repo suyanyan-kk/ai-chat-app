@@ -1,0 +1,79 @@
+.code-block {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+}
+
+.code-header {
+  height: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  box-sizing: border-box;
+  background: #1e1e2f;
+  border-bottom: 1px solid #ddd;
+}
+
+.code-header .lang {
+  width: 15%;
+  height: 100%;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.copy-btn {
+  width: 20%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.copy-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+pre {
+  margin: 0;
+  overflow-x: auto;
+  background: #282c34;
+}
+
+code.hljs {
+  display: block;
+  /* padding: 12px; */
+  font-size: 13px;
+  line-height: 1.6;
+  color: #abb2bf;
+}
+/* 代码块样式 */
+.msg :deep(pre) {
+  background: #0d1117;
+  /* padding: 12px; */
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.msg :deep(code) {
+  font-size: 0.9em;
+}
+
+.msg :deep(p) {
+  margin: 6px 0;
+}

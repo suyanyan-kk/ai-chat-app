@@ -1,0 +1,7 @@
+/* 引入其他样式模块 */
+@import "./base/reset.css";
+@import "./components/markdown.css";
+/* 你也可以写一些全局变量 */
+:root {
+  --primary-color: #4f46e5;
+}
