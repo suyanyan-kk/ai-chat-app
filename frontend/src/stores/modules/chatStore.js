@@ -3,20 +3,23 @@ import { v4 as uuidv4 } from "uuid"
 
 export const useChatStore = defineStore("chat", {
   state: () => ({
-    sessions: [{
-      id: null,
-      title: "新对话",
-      messages: [],
-      createdAt: Date.now(),
-      messages:[{
-        type: "markdown",
-        isUser: false,
-        role: "AI",
-        content: "你好",
-        time: Date.now(),
-        loading: false  
-      }]
-    }],
+    sessions: [
+    // 初始数据，方便调试
+    //   {
+    //   id: uuidv4(),
+    //   title: "新对话",
+    //   messages: [],
+    //   createdAt: Date.now(),
+    //   messages: [{
+    //     type: "markdown",
+    //     isUser: false,
+    //     role: "AI",
+    //     content: "你好",
+    //     time: Date.now(),
+    //     loading: false
+    //   }]
+    // }
+  ],
     currentSessionId: null,
   }),
 
@@ -35,13 +38,20 @@ export const useChatStore = defineStore("chat", {
       this.sessions.push({
         id,
         title: "新对话",
-        messages: [],
         createdAt: Date.now(),
-        messages:[]
+        messages: [
+          {
+            type: "text",
+            isUser: false,
+            role: "AI",
+            content: "你好 👋 我是你的 AI 助手",
+            time: Date.now(),
+            loading: false
+          }
+        ]
       })
       this.currentSessionId = id
     },
-
     switchSession(id) {
       this.currentSessionId = id
     },

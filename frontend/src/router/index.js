@@ -1,37 +1,54 @@
-// src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
-import chat from '../views/chat.vue'
-import langchainPractice  from '../views/langchainPractice.vue'
-import about from '../views/about.vue'
 
-import NotFound from '../views/NotFound.vue'  // 导入404组件
+// 页面
+import Home from '../views/home/index.vue'
+import About from '../views/about/index.vue'
+import NotFound from '../views/NotFound.vue'
+
+// 子页面
+import Chat from '../views/chat/chatMain.vue'
+import LangchainPractice from '../views/test/langchainPractice.vue'
+
+// ⭐ 新增：布局组件（关键）
+import QaContent from '../views/chat/index.vue'
+
 const routes = [
   {
     path: '/',
-    name: 'chat',
-    component: chat,
-    meta: {
-      title: '首页'
-    }
+    name: 'home',
+    component: Home,
+    meta: { title: '首页' }
   },
-   {
-    path: '/langchainPractice',
+
+  // ⭐ 问答模块（带二级路由）
+  {
+    path: '/qa',
+    component: QaContent,
+    meta: { title: '问答' },
+    children: [
+      {
+        path: 'chat',
+        name: 'chat',
+        component: Chat,
+        meta: { title: '对话' }
+      }
+    ]
+  },
+  {
+    path: '/langchain',
     name: 'langchainPractice',
-    component: langchainPractice,
-    meta: {
-      title: '练习LangChain'
-    }
+    component: LangchainPractice,
+    meta: { title: 'LangChain' }
   },
   {
     path: '/about',
     name: 'about',
-    component: about,
-    meta: {
-      title: '关于'
-    }
+    component: About,
+    meta: { title: '关于' }
   },
+
   {
-    path: '/:pathMatch(.*)*',  // 添加404路由，必须放在最后
+    path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: NotFound
   }

@@ -27,6 +27,7 @@
         />
 
         <n-button type="primary" @click="sendMessage"> 发送 </n-button>
+        <button class="new-btn" @click="handleNewSession"> + 新建会话</button>
       </div>
     </div>
     <n-alert title="Warning 类型" type="warning" v-show="isWarningVisible">
@@ -146,6 +147,10 @@ const sendMessage = async () => {
     await nextTick();
   }
 };
+// 新建会话
+const handleNewSession = () => {
+  chatStore.createSession();
+};
 // 监听会话数据变化，自动保存到 localStorage
 watch(chatStore.sessions, () => {
   localStorage.setItem("sessions", JSON.stringify(chatStore.sessions))
@@ -168,6 +173,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+
 .chat-page {
   display: flex;
   flex-direction: column;
@@ -175,6 +181,7 @@ onMounted(() => {
 }
 
 .chat-header {
+  padding-top: 26px;
   padding-bottom: 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -196,7 +203,7 @@ onMounted(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin-top: 14px;
+  padding: 14px;
   min-height: 0;
 }
 
@@ -250,7 +257,9 @@ onMounted(() => {
   box-shadow: 0 0 0 2px rgba(130, 118, 255, 0.24);
 }
 
-.chat-input button {
+.chat-input button,.new-btn {
+  width: 80px;
+  height: 100%;
   padding: 0px 10px;
   border-radius: 14px;
   border: none;
@@ -265,6 +274,10 @@ onMounted(() => {
   transform: translateY(-1px);
   box-shadow: 0 8px 18px rgba(58, 228, 255, 0.3);
 }
+.chat-input .new-btn {
+  width: 120px;
+}
+
 /* 消息样式 */
 .msg :deep(p) {
   margin: 6px 0;

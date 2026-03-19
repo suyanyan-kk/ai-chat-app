@@ -1,77 +1,75 @@
-
 <template>
   <div class="layout">
-    <aside :class="['sidebar', { open: sidebarOpen }]">
+    <!-- 一级菜单 -->
+    <aside :class="['sidebar']">
       <div class="sidebar-header">
-        <span class="brand">deepseek</span>
-        <button class="close-btn" @click="toggleSidebar" aria-label="Close sidebar">
-          ×
-        </button>
+        <span class="brand">SUSY</span>
       </div>
-
       <nav class="menu">
-        <router-link
-          v-for="route in navRoutes"
-          :key="route.path"
-          :to="route.path"
-          class="menu-item"
-          active-class="active"
-          @click="closeSidebar"
-        >
-          {{ route.meta.title }}
-        </router-link>
+        <template v-for="route in rootRoutes" :key="route.path">
+          <!-- ✅ 没有子路由（一级） -->
+          <router-link
+            v-if="!route.children"
+            :to="route.path"
+            class="menu-item"
+            active-class="active"
+          >
+            {{ route.meta.title }}
+          </router-link>
+
+          <!-- ✅ 有子路由（二级） -->
+          <div v-else :class="['menu-group', { active: isActiveGroup(route) }]">
+            <div class="menu-group-title">
+              {{ route.meta.title }}
+            </div>
+
+            <router-link
+              v-for="child in route.children"
+              :key="child.path"
+              :to="route.path + '/' + child.path"
+              class="menu-item"
+              active-class="active"
+            >
+              {{ child.meta.title }}
+            </router-link>
+          </div>
+        </template>
       </nav>
     </aside>
 
+    <!-- 主体 -->
     <div class="main">
       <header class="topbar">
-        <button class="hamburger" @click="toggleSidebar" aria-label="Toggle menu">
-          <span />
-          <span />
-          <span />
-        </button>
         <div class="topbar-title">
-          {{ pageTitle }}
+          <span v-for="(item, index) in titleList" :key="index">
+            {{ item }}
+            <span v-if="index < titleList.length - 1"> / </span>
+          </span>
         </div>
       </header>
 
-      <main class="content" @click="closeSidebar">
+      <main class="content">
         <router-view />
       </main>
     </div>
-
-    <div class="mask" v-if="sidebarOpen" @click="closeSidebar" />
   </div>
 </template>
+
 <script setup>
 import { ref, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
-const sidebarOpen = ref(false);
-
-// 当前路由（用于标题）
 const route = useRoute();
-
-// ✅ 正确拿路由表
 const router = useRouter();
-const routes = router.options.routes;
 
-// ✅ 过滤 + 排序（推荐写法）
-const navRoutes = computed(() =>
-  routes
-    .filter(r => r.meta?.title && !r.meta?.hidden)
-    .sort((a, b) => (a.meta?.order || 0) - (b.meta?.order || 0))
+// ⭐ 只取一级路由（关键！！）
+const rootRoutes = computed(() => router.options.routes.filter((r) => r.meta?.title));
+
+const titleList = computed(() =>
+  route.matched.filter((r) => r.meta?.title).map((r) => r.meta.title)
 );
-
-// ✅ 顶部标题（自动根据路由变化）
-const pageTitle = computed(() => route.meta?.title || "默认标题");
-
-const toggleSidebar = () => {
-  sidebarOpen.value = !sidebarOpen.value;
-};
-
-const closeSidebar = () => {
-  sidebarOpen.value = false;
+const isActiveGroup = (parentRoute) => {
+  return route.matched.some((r) => r.path === parentRoute.path);
 };
 </script>
 <style scoped>
@@ -129,6 +127,22 @@ const closeSidebar = () => {
   gap: 10px;
 }
 
+.menu-group .menu-item {
+  padding-left: 24px;
+  font-size: 0.95rem;
+}
+.menu-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.menu-group-title {
+  font-size: 0.8rem;
+  opacity: 0.5;
+  padding: 6px 12px;
+  margin-top: 8px;
+}
 .menu-item {
   padding: 12px 14px;
   border-radius: 12px;
@@ -137,7 +151,11 @@ const closeSidebar = () => {
   font-weight: 500;
   transition: all 0.18s ease;
 }
-
+.menu-group .menu-item::before {
+  content: "•";
+  margin-right: 6px;
+  opacity: 0.4;
+}
 .menu-item:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
@@ -148,7 +166,15 @@ const closeSidebar = () => {
   background: rgba(255, 255, 255, 0.15);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
+.menu-group.active .menu-group-title {
+  color: #fff;
+  opacity: 1;
+}
 
+.menu-group.active {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
 .main {
   flex: 1;
   display: flex;
@@ -206,7 +232,6 @@ const closeSidebar = () => {
 .content {
   flex: 1;
   box-sizing: border-box;
-  padding: 26px;
   overflow: hidden; /* 这里禁止浏览器滚动 */
   width: 100%;
   margin: 0 auto;
@@ -218,5 +243,13 @@ const closeSidebar = () => {
   background: rgba(12, 15, 30, 0.65);
   z-index: 1;
   pointer-events: auto;
+}
+.topbar-title span {
+  opacity: 0.7;
+}
+
+.topbar-title span:last-child {
+  opacity: 1;
+  font-weight: 600;
 }
 </style>
