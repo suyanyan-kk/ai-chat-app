@@ -20,12 +20,12 @@ const md = new MarkdownIt({
   }
 })
 // 如果文本中包含 console.log 但没有代码块标记，则自动添加 ```js ``` 标记
-function fixMarkdown(text) {
-  if (text.includes("console.log") && !text.includes("```")) {
-    return "```js\n" + text + "\n```"
+function fixMarkdown(content) {
+  if (content.includes("console.log") && !content.includes("```")) {
+    return "```js\n" + content + "\n```"
   }
-  return text
+  return content
 }
-export const renderMarkdown = (text) => {
-  return md.render(fixMarkdown(text))
+export const renderMarkdown = (content) => {
+  return md.render(fixMarkdown(content))
 }

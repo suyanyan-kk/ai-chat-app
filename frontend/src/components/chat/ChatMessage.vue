@@ -5,10 +5,10 @@
     :class="['msg', msg.isUser ? 'msg-user' : 'msg-bot']"
   >
     <!-- AI -->
-    <div  v-if="msg.type === 'markdown'" v-html="renderMarkdown(msg.text)"></div>
+    <div  v-if="msg.type === 'markdown'" v-html="renderMarkdown(msg.content)"></div>
 
     <!-- 用户 -->
-    <div  v-else v-html="msg.text"></div>
+    <div  v-else v-html="msg.content"></div>
 
     <!-- 打字光标 -->
     <span v-if="msg.loading" class="cursor">▌</span>

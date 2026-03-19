@@ -14,5 +14,5 @@ export function chatStream(message, onMessage) {
 
 // 提示词模版ChatPromptTemplate练习
 export function langchainPractice(message, onMessage) {
-  return streamRequest("/langchain-practice", { message }, onMessage)
+  return streamRequest("/langchain-practice", { ...message }, onMessage)
 }

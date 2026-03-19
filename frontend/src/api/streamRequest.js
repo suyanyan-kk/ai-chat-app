@@ -9,21 +9,21 @@ export async function streamRequest(url, data, onMessage) {
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify(data)
+    body: JSON.stringify({
+      session_id: data.session_id,
+      message: data.message,
+    })
   })
   if (!response.body) {
     throw new Error("ReadableStream not supported")
   }
-
   const reader = response.body.getReader()
   const decoder = new TextDecoder("utf-8")
   let buffer = ""
   while (true) {
     const { done, value } = await reader.read()
     if (done) break
-
     const chunk = decoder.decode(value, { stream: true })
     onMessage(chunk)
-    // console.log(chunk, "打印每个接收到的内容块") // 这里可以根据需要处理 content，比如更新 UI 或者存储数据
   }
 }

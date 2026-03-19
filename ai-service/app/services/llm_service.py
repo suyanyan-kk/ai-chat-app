@@ -1,58 +1,97 @@
 import os
 from dotenv import load_dotenv
+
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
-# 提示词模版相关
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-# 记忆相关
 from langchain.memory import ConversationBufferMemory
-from langchain.agents import create_agent
+from langchain_core.output_parsers import StrOutputParser
 
 load_dotenv()
 
 deepSeek_api_key = os.getenv("DEEPSEEK_API_KEY")
 deepSeek_base_url = os.getenv("DEEPSEEK_BASE_URL")
 
-# 创建 LLM 模型
-chain = ChatOpenAI(
+# ===== 模型 =====
+model = ChatOpenAI(
     model="deepseek-chat",
     base_url=deepSeek_base_url,
-    api_key= deepSeek_api_key,
+    api_key=deepSeek_api_key,
+    temperature=0.7,
     streaming=True,
-    max_tokens=100   # ✅ 限制最多生成 500 token
+    max_tokens=100
 )
 
+# ===== Prompt =====
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "你是一个前端开发专家，回答要简洁清晰"),
+    # ("system", "你是一个可以从我私人知识库里提取答案的专家，回答要简洁清晰"),
+    MessagesPlaceholder(variable_name="history"),
+    ("human", "{input}")
+])
 
-# 定义一个工具函数，模拟获取天气信息
-def get_weather(city: str) -> str:
-    """获取指定城市的天气。"""
-    return f"{city}总是阳光明媚！"
+# ===== Parser =====
+parser = StrOutputParser()
 
-agent = chain.create_agent(
-    tools=[get_weather],
-    system_prompt="你是一个乐于助人的助手",
-)
+# ===== Chain =====
+chain = prompt | model | parser
 
-# 运行代理
-agent.invoke(
-    {"messages": [{"role": "user", "content": "北京的天气怎么样"}]}
-)
+# ===== Memory 管理（按用户隔离）=====
+memory_store = {}
 
-def stream_llm(message):
+def get_memory(session_id: str):
+    if session_id not in memory_store:
+        memory_store[session_id] = ConversationBufferMemory(return_messages=True)
+    return memory_store[session_id]
 
-    for chunk in chain.stream([
-        HumanMessage(content=message)
-    ]):
 
+# ===== 普通聊天（带记忆）=====
+def chatmemory_llm(session_id: str, user_input: str):
+    memory = get_memory(session_id)
+
+    history = memory.load_memory_variables({})["history"]
+
+    response = chain.invoke({
+        "input": user_input,
+        "history": history
+    })
+
+    memory.save_context(
+        {"input": user_input},
+        {"output": response}
+    )
+
+    return response
+
+
+# ===== 流式输出（升级版：带 Prompt + Memory）=====
+def stream_llm(session_id: str, user_input: str):
+    memory = get_memory(session_id)
+    history = memory.load_memory_variables({})["history"]
+
+    # 用 prompt 构造完整消息
+    messages = prompt.invoke({
+        "input": user_input,
+        "history": history
+    })
+
+    full_response = ""
+
+    for chunk in model.stream(messages):
         if chunk.content:
-            # 每当接收到新的内容块时，yield 返回给前端
-            # 这里可以根据需要对 chunk.content 进行处理，比如过滤掉空内容或者添加一些格式
-            # 注意：yield 只能返回字符串类型，如果 chunk.content 是其他类型，需要先转换成字符串
-            # 例如，如果 chunk.content 是一个字典，可以使用 json.dumps(chunk.content) 转换成 JSON 字符串
-            yield chunk.content 
+            full_response += chunk.content
+            yield chunk.content
 
+    # 存入 memory
+    memory.save_context(
+        {"input": user_input},
+        {"output": full_response}
+    )
+
+
+# ===== 简单问答（无记忆）=====
 def ask_llm(message: str):
-    response = chain.invoke([
+    response = model.invoke([
         HumanMessage(content=message)
     ])
     return response.content

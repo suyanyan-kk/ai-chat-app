@@ -8,7 +8,7 @@
     <div class="chat-body">
       <div class="msg-list" ref="msgList">
           <ChatMessage
-            v-for="(msg, index) in messages"
+            v-for="(msg, index) in chatStore.currentMessages"
             :key="msg.id || index"
             :msg="msg"
           />
@@ -36,31 +36,37 @@
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted, reactive, onUpdated } from "vue";
+import { ref, nextTick, onMounted, reactive, watch } from "vue";
 import { chatStream, langchainPractice } from "@/api";
 import ChatMessage from '@/components/chat/ChatMessage.vue'
-const messages = ref([
-  { type: "markdown", text: "Hello, this is a chat message.", isUser: false },
-]);
+import { useChatStore } from "@/stores/modules/chatStore";
+import { useUIStore } from "@/stores/modules/uiStore";
+import { storeToRefs } from 'pinia';
+const chatStore = useChatStore()
+const uiStore = useUIStore()
+const { isWarningVisible } = storeToRefs(uiStore)
+const messages = ref([{ 
+  // type: "markdown",
+  // isUser: false,
+  // role: "AI",
+  // content: "你好",
+  // time: Date.now(),
+  // loading: false
+ }]);
+
+
 const newMessage = ref("");
-const isWarningVisible = ref(false);
 const msgList = ref(null);
-const loading = ref(false);
+// 初始化一个会话（第一次进入）
+if (!chatStore.currentSessionId) {
+  chatStore.createSession()
+}
 const scrollToBottom = async () => {
   await nextTick();
   if (msgList.value) {
     msgList.value.scrollTop = msgList.value.scrollHeight;
   }
 };
-// 文本打字机效果
-// ⭐ 简单版本，直接逐字更新整个文本 会卡顿
-// const typeWriter = async (text, target) => {
-//   for (let char of text) {
-//     target.text += char
-//     await new Promise(resolve => setTimeout(resolve, 20)) // 速度可调
-//   }
-// }
-
 let queue = [];
 let isTyping = false;
 
@@ -72,7 +78,7 @@ const typeWriter = async (target) => {
     const text = queue.shift();
 
     for (let char of text) {
-      target.text += char;
+      target.content += char;  
       smartScroll();
       await new Promise((r) => setTimeout(r, 10 + Math.random() * 20));
     }
@@ -93,47 +99,57 @@ const sendMessage = async () => {
   const value = newMessage.value.trim();
   if (!value) return;
   if (newMessage.value.length > 2000) {
-    isWarningVisible.value = true;
-    return
+     uiStore.showWarning()
+     return
   }
-  // 用户消息
-  messages.value.push({type: "text", text: value, isUser: true });
-
+  // 1️⃣ 前端先插入用户消息
+  chatStore.addUserMessage({
+    type: "text",
+    isUser: true,
+    role: "user",
+    content: value,
+    time: Date.now()
+  })
   newMessage.value = "";
-
   await scrollToBottom();
 
-  // AI消息先插入一个空的
+  // 2️⃣AI消息先插入一个空的
   // ⭐关键，后续通过修改这个对象的text属性来实现流式更新
   let aiMessage = reactive({
-    id: Date.now(),
-    type: "markdown", // text | code | markdown
-    text: "",
+    type: "markdown",
+    content: "",
     isUser: false,
+    role: "AI",
     loading: true,
-    language: "", // code 时用
-  });
-  messages.value.push(aiMessage);
+    time: Date.now(),
+  })
 
-  await scrollToBottom();
-  loading.value = true;
+  chatStore.addAIMessage(aiMessage)
+  await scrollToBottom()
   try {
     // ⭐ 这里的流式接口需要后端配合，逐步返回数据
     // await chatStream(value, async (chunk) => {
     // 提示词模版练习接口
-    await langchainPractice(value, async (chunk) => {
+    await langchainPractice({
+      session_id: chatStore.currentSessionId, 
+      message: value
+    }, async (chunk) => {
+      
       queue.push(chunk);
       // 每次收到新数据时尝试触发打字机效果，如果正在打字则会排队等候
       typeWriter(aiMessage);
     });
   } catch (error) {
-    aiMessage.text = "抱歉，获取回复失败";
+    aiMessage.content = "抱歉，获取回复失败";
   } finally {
     aiMessage.loading = false;
     await nextTick();
   }
 };
-
+// 监听会话数据变化，自动保存到 localStorage
+watch(chatStore.sessions, () => {
+  localStorage.setItem("sessions", JSON.stringify(chatStore.sessions))
+}, { deep: true })
 onMounted(() => {
   document.addEventListener("click", (e) => {
     if (e.target.classList.contains("copy-btn")) {
