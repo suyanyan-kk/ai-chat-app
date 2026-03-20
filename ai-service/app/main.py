@@ -8,7 +8,7 @@ import uvicorn
 app = FastAPI()
 
 # 流式接口+多会话
-@app.post("/langchain-practice")
+@app.post("/chat-stream")
 def langchain_practice(data: dict): 
      session_id = data["session_id"]   # 前端需要传入 session_id 来区分不同用户的对话历史
      message = data["message"]
@@ -18,12 +18,12 @@ def langchain_practice(data: dict):
             media_type="text/plain"
         )
 
-@app.post("/chat-stream")
-async def chat_stream(data: dict):
-    return StreamingResponse(
-        stream_llm(data["message"]),
-        media_type="text/plain"
-    )
+# @app.post("/chat-stream")
+# async def chat_stream(data: dict):
+#     return StreamingResponse(
+#         stream_llm(data["message"]),
+#         media_type="text/plain"
+#     )
 
 @app.post("/chat") 
 def chat(data: dict):

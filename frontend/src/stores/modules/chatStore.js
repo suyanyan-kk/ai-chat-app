@@ -13,7 +13,7 @@ export const useChatStore = defineStore("chat", {
     //   messages: [{
     //     type: "markdown",
     //     isUser: false,
-    //     role: "AI",
+    //     role: "AI",//角色：AI 或 User
     //     content: "你好",
     //     time: Date.now(),
     //     loading: false

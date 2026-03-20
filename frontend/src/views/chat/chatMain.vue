@@ -38,7 +38,7 @@
 
 <script setup>
 import { ref, nextTick, onMounted, reactive, watch } from "vue";
-import { chatStream, langchainPractice } from "@/api";
+import { chatStream } from "@/api";
 import ChatMessage from '@/components/chat/ChatMessage.vue'
 import { useChatStore } from "@/stores/modules/chatStore";
 import { useUIStore } from "@/stores/modules/uiStore";
@@ -81,7 +81,7 @@ const typeWriter = async (target) => {
     for (let char of text) {
       target.content += char;  
       smartScroll();
-      await new Promise((r) => setTimeout(r, 10 + Math.random() * 20));
+      await new Promise((r) => setTimeout(r, 10 + Math.random() * 80));
     }
   }
 
@@ -131,19 +131,22 @@ const sendMessage = async () => {
     // ⭐ 这里的流式接口需要后端配合，逐步返回数据
     // await chatStream(value, async (chunk) => {
     // 提示词模版练习接口
-    await langchainPractice({
+    await chatStream({
       session_id: chatStore.currentSessionId, 
       message: value
-    }, async (chunk) => {
-      
-      queue.push(chunk);
+    }, async (msg) => {
+      // console.log("👉 chunk对象:", msg) // 看整体
+      // 🔥 流式内容
+    if (msg.type === "stream") {
+      queue.push(msg.data)   // 👈 只推“文本”
       // 每次收到新数据时尝试触发打字机效果，如果正在打字则会排队等候
-      typeWriter(aiMessage);
+      typeWriter(aiMessage)
+      return
+    }
     });
   } catch (error) {
     aiMessage.content = "抱歉，获取回复失败";
-  } finally {
-    aiMessage.loading = false;
+  } finally {aiMessage.loading = false
     await nextTick();
   }
 };

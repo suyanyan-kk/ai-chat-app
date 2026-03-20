@@ -78,7 +78,7 @@
 
 <script setup>
 import { ref } from "vue";
-import { langchainPractice } from "@/api";
+import { chatStream } from "@/api";
 
 /* 折叠 */
 const activeIndex = ref(null);
@@ -131,7 +131,7 @@ const ask = async () => {
   answer.value = "思考中...";
 
   try {
-    await langchainPractice(
+    await chatStream(
       { message: question.value },
       (chunk) => {
         answer.value += chunk;
