@@ -38,7 +38,7 @@
 
 <script setup>
 import { ref, nextTick, onMounted, reactive, watch } from "vue";
-import { chatStream } from "@/api";
+import { chatStream, generateTitle } from "@/api";
 import ChatMessage from '@/components/chat/ChatMessage.vue'
 import { useChatStore } from "@/stores/modules/chatStore";
 import { useUIStore } from "@/stores/modules/uiStore";
@@ -96,14 +96,38 @@ const smartScroll = () => {
     lastScroll = now;
   }
 };
+// 1️⃣ 主函数
 const sendMessage = async () => {
-  const value = newMessage.value.trim();
-  if (!value) return;
-  if (newMessage.value.length > 2000) {
-     uiStore.showWarning()
-     return
+  const value = newMessage.value.trim()
+  if (!value) return
+
+  if (value.length > 2000) {
+    uiStore.showWarning()
+    return
   }
-  // 1️⃣ 前端先插入用户消息
+ // ⭐ 是否是新会话（关键判断）
+ const session = chatStore.getCurrentSession()
+ const isFirstMessage = !session.title || session.title === "新会话"
+  handleUserMessage(value)
+// ⭐ AI消息先插入一个空的
+  const aiMessage = createAIMessage()
+
+  try {
+    await handleStream(value, aiMessage)
+  } catch (error) {
+    aiMessage.content = "抱歉，获取回复失败"
+  } finally {
+    debugger
+    // 遗留问题标题没有生成，先放在这里，后续优化
+    aiMessage.loading = false
+    await nextTick()
+    if (isFirstMessage) {
+     await handleTitle(value)
+    }
+  }
+}
+// 2️⃣ 用户消息
+const handleUserMessage = async (value) => {
   chatStore.addUserMessage({
     type: "text",
     isUser: true,
@@ -111,12 +135,13 @@ const sendMessage = async () => {
     content: value,
     time: Date.now()
   })
-  newMessage.value = "";
-  await scrollToBottom();
 
-  // 2️⃣AI消息先插入一个空的
-  // ⭐关键，后续通过修改这个对象的text属性来实现流式更新
-  let aiMessage = reactive({
+  newMessage.value = ""
+  await scrollToBottom()
+}
+// 3️⃣ AI占位消息
+const createAIMessage = () => {
+  const aiMessage = reactive({
     type: "markdown",
     content: "",
     isUser: false,
@@ -126,30 +151,110 @@ const sendMessage = async () => {
   })
 
   chatStore.addAIMessage(aiMessage)
-  await scrollToBottom()
-  try {
-    // ⭐ 这里的流式接口需要后端配合，逐步返回数据
-    // await chatStream(value, async (chunk) => {
-    // 提示词模版练习接口
-    await chatStream({
-      session_id: chatStore.currentSessionId, 
+  scrollToBottom()
+
+  return aiMessage
+}
+// 4️⃣ 流式处理
+const handleStream = async (value, aiMessage) => {
+  await chatStream(
+    {
+      session_id: chatStore.currentSessionId,
       message: value
-    }, async (msg) => {
-      // console.log("👉 chunk对象:", msg) // 看整体
-      // 🔥 流式内容
-    if (msg.type === "stream") {
-      queue.push(msg.data)   // 👈 只推“文本”
-      // 每次收到新数据时尝试触发打字机效果，如果正在打字则会排队等候
-      typeWriter(aiMessage)
-      return
+    },
+    (msg) => {
+      if (msg.type === "stream") {
+        queue.push(msg.data)
+        typeWriter(aiMessage)
+      }
     }
-    });
-  } catch (error) {
-    aiMessage.content = "抱歉，获取回复失败";
-  } finally {aiMessage.loading = false
-    await nextTick();
+  )
+}
+// 5️⃣ 标题生成
+const handleTitle = async (value) => {
+  debugger
+  try {
+    const res = await generateTitle(value)
+
+    chatStore.updateSessionTitle(
+      chatStore.currentSessionId,
+      res.title
+    )
+  } catch (e) {
+    console.log("生成标题失败")
   }
-};
+}
+// const sendMessage = async () => {
+//   const value = newMessage.value.trim();
+//   if (!value) return;
+//   if (newMessage.value.length > 2000) {
+//      uiStore.showWarning()
+//      return
+//   }
+//    // ⭐ 是否是新会话（关键判断）
+//   const isFirstMessage = chatStore.currentMessages.length === 0;
+
+//   // 1️⃣ 前端先插入用户消息
+//   chatStore.addUserMessage({
+//     type: "text",
+//     isUser: true,
+//     role: "user",
+//     content: value,
+//     time: Date.now()
+//   })
+//   newMessage.value = "";
+//   await scrollToBottom();
+
+//   // 2️⃣AI消息先插入一个空的
+//   // ⭐关键，后续通过修改这个对象的text属性来实现流式更新
+//   let aiMessage = reactive({
+//     type: "markdown",
+//     content: "",
+//     isUser: false,
+//     role: "AI",
+//     loading: true,
+//     time: Date.now(),
+//   })
+
+//   chatStore.addAIMessage(aiMessage)
+//   await scrollToBottom()
+//   try {
+//     // ⭐ 这里的流式接口需要后端配合，逐步返回数据
+//     // await chatStream(value, async (chunk) => {
+//     // 提示词模版练习接口
+//     await chatStream({
+//       session_id: chatStore.currentSessionId, 
+//       message: value
+//     }, async (msg) => {
+//       // console.log("👉 chunk对象:", msg) // 看整体
+//       // 🔥 流式内容
+//     if (msg.type === "stream") {
+//       queue.push(msg.data)   // 👈 只推“文本”
+//       // 每次收到新数据时尝试触发打字机效果，如果正在打字则会排队等候
+//       typeWriter(aiMessage)
+//       return
+//     }
+//     });
+//   } catch (error) {
+//     aiMessage.content = "抱歉，获取回复失败";
+//   } finally {
+//     aiMessage.loading = false
+//     await nextTick();
+//      // ⭐⭐⭐ 3️⃣ 生成标题（关键！！！）
+//   if (isFirstMessage) {
+//     try {
+//       const res = await generateTitle(value);
+
+//       chatStore.updateSessionTitle(
+//         chatStore.currentSessionId,
+//         res.title
+//       );
+//     } catch (e) {
+//       console.log("生成标题失败");
+//     }
+//   }
+//   }
+// };
 // 新建会话
 const handleNewSession = () => {
   chatStore.createSession();

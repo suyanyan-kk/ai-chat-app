@@ -6,3 +6,6 @@ class ChatRequest(BaseModel):
 
 class TitleRequest(BaseModel):
     message: str
+
+class HealthResponse(BaseModel):
+    status: str = "ok"      

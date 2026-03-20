@@ -12,11 +12,10 @@ chat_prompt = ChatPromptTemplate.from_messages([
 title_prompt = ChatPromptTemplate.from_messages([
     ("system", "你是一个标题生成助手"),
     ("human", """
-请根据用户的问题生成一个简短的会话标题（10字以内）：
-只输出标题：
-{input}
-""")
-])
+        请根据用户的问题生成一个简短的会话标题（10字以内）：
+        只输出标题：
+        {input}""")
+    ])
 
 # 简单问答
 simple_prompt = ChatPromptTemplate.from_messages([

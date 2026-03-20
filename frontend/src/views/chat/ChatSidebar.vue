@@ -63,5 +63,6 @@ const switchSession = (id) => {
 .title {
   color: rgba(244, 248, 255, 0.92);
   font-size: 14px;
+  transition: all 0.2s ease;
 }
 </style>

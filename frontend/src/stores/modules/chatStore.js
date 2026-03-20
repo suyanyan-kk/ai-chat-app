@@ -56,7 +56,22 @@ export const useChatStore = defineStore("chat", {
     switchSession(id) {
       this.currentSessionId = id
     },
+    getCurrentSession() {
+  const session = this.sessions.find(
+    s => s.id === this.currentSessionId
+  )
 
+  if (!session) {
+    console.warn("⚠️ 当前 session 不存在")
+    return {
+      id: null,
+      title: "新会话",
+      messages: []
+    }
+  }
+
+  return session
+},
     deleteSession(id) {
       this.sessions = this.sessions.filter(s => s.id !== id)
       // 如果删除的是当前会话，切换到第一个会话（如果有的话）
@@ -84,6 +99,13 @@ export const useChatStore = defineStore("chat", {
       const msgs = this.currentMessages
       if (!msgs.length) return
       msgs[msgs.length - 1].loading = false
+    },
+    updateSessionTitle(sessionId, title) {
+      debugger
+      const session = this.sessions.find(s => s.id === sessionId);
+      if (session) {
+        session.title = title;
+      }
     }
   }
 })
