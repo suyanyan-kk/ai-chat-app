@@ -27,8 +27,9 @@ export const useChatStore = defineStore("chat", {
     currentSession(state) {
       return state.sessions.find(s => s.id === state.currentSessionId)
     },
-    currentMessages(state) {
-      return state.currentSession?.messages || []
+    // 获取当前会话的消息列表
+    currentMessages() {
+      return this.currentSession?.messages || []
     }
   },
 
@@ -58,6 +59,7 @@ export const useChatStore = defineStore("chat", {
 
     deleteSession(id) {
       this.sessions = this.sessions.filter(s => s.id !== id)
+      // 如果删除的是当前会话，切换到第一个会话（如果有的话）
       if (this.currentSessionId === id) {
         this.currentSessionId = this.sessions[0]?.id || null
       }
@@ -71,13 +73,13 @@ export const useChatStore = defineStore("chat", {
       this.currentSession?.messages.push(msg)
       return msg
     },
-
+    // 更新 AI 消息（流式更新）
     updateAIMessage(chunk) {
       const msgs = this.currentMessages
       if (!msgs.length) return
-      msgs[msgs.length - 1].text += chunk
+      msgs[msgs.length - 1].content += chunk
     },
-
+    // 结束 AI 消息（流式更新结束）
     finishAIMessage() {
       const msgs = this.currentMessages
       if (!msgs.length) return

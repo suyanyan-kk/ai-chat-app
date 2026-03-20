@@ -2,43 +2,19 @@
   <div class="qa-layout">
     <!-- ⭐ 左侧（二级菜单 + 会话） -->
     <aside class="sidebar">
-      <!-- 二级菜单 -->
-      <!-- <nav class="menu">
-        <router-link
-          v-for="child in childRoutes"
-          :key="child.path"
-          :to="`/qa/${child.path}`"
-          class="menu-item"
-          active-class="active"
-        >
-          {{ child.meta.title }}
-        </router-link>
-      </nav> -->
-
       <!-- ⭐ 会话列表 -->
       <ChatSidebar />
     </aside>
-
     <!-- 右侧内容 -->
     <div class="content">
-      <router-view />
+        <ChatContent />
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from "vue";
-import { useRouter } from "vue-router";
 import ChatSidebar from "./ChatSidebar.vue";
-
-const router = useRouter();
-
-// ⭐ 拿到 /qa 下的 children
-const qaRoute = router.options.routes.find(r => r.path === "/qa");
-
-const childRoutes = computed(() =>
-  qaRoute.children.filter(r => r.meta?.title)
-);
+import ChatContent from "./chatMain.vue"
 </script>
 
 <style scoped>

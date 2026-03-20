@@ -6,7 +6,7 @@ import About from '../views/about/index.vue'
 import NotFound from '../views/NotFound.vue'
 
 // 子页面
-import Chat from '../views/chat/chatMain.vue'
+import Chat from '../views/chat/index.vue'
 import LangchainPractice from '../views/test/langchainPractice.vue'
 
 // ⭐ 新增：布局组件（关键）

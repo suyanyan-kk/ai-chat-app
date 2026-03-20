@@ -2,8 +2,8 @@
   <div class="layout">
     <!-- 一级菜单 -->
     <aside :class="['sidebar']">
-      <div class="sidebar-header">
-        <span class="brand">SUSY</span>
+      <div class="logo-box" @click="goHome">
+        <img class="logo" src="@/assets/logo.jpg" />
       </div>
       <nav class="menu">
         <template v-for="route in rootRoutes" :key="route.path">
@@ -22,7 +22,6 @@
             <div class="menu-group-title">
               {{ route.meta.title }}
             </div>
-
             <router-link
               v-for="child in route.children"
               :key="child.path"
@@ -36,7 +35,6 @@
         </template>
       </nav>
     </aside>
-
     <!-- 主体 -->
     <div class="main">
       <header class="topbar">
@@ -71,6 +69,9 @@ const titleList = computed(() =>
 const isActiveGroup = (parentRoute) => {
   return route.matched.some((r) => r.path === parentRoute.path);
 };
+const goHome = () => {
+  router.push('/')
+}
 </script>
 <style scoped>
 .layout {
@@ -93,32 +94,20 @@ const isActiveGroup = (parentRoute) => {
   gap: 32px;
   transition: transform 0.25s ease;
 }
-
-.sidebar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-
-.brand {
-  font-size: 1.25rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #fff;
-}
-
-.close-btn {
-  display: none;
-  width: 34px;
-  height: 34px;
-  border: none;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 1.3rem;
+.logo {
+  width: 150px;
+  height: 75px;
+  padding: 6px;
+  box-sizing: border-box;
+  border-radius: 50px;
+  object-fit: cover;
+  transition: all 0.2s ease;
   cursor: pointer;
+}
+
+.logo-box:hover .logo {
+  transform: scale(1.1) translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .menu {
@@ -191,38 +180,6 @@ const isActiveGroup = (parentRoute) => {
   backdrop-filter: blur(12px);
 }
 
-.hamburger {
-  width: 44px;
-  height: 44px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.06);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.18s ease;
-  position: relative;
-}
-
-.hamburger span {
-  display: block;
-  width: 20px;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.85);
-  border-radius: 2px;
-  transform-origin: center;
-}
-
-.hamburger span + span {
-  margin-top: 6px;
-}
-
-.hamburger:hover {
-  background: rgba(255, 255, 255, 0.12);
-  transform: translateY(-1px);
-}
-
 .topbar-title {
   font-weight: 600;
   font-size: 1.05rem;
@@ -235,14 +192,6 @@ const isActiveGroup = (parentRoute) => {
   overflow: hidden; /* 这里禁止浏览器滚动 */
   width: 100%;
   margin: 0 auto;
-}
-
-.mask {
-  position: fixed;
-  inset: 0;
-  background: rgba(12, 15, 30, 0.65);
-  z-index: 1;
-  pointer-events: auto;
 }
 .topbar-title span {
   opacity: 0.7;

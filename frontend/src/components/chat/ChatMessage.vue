@@ -1,18 +1,36 @@
 <template>
-  <n-card
-    content-style="padding: 8px 12px;"
-    :style="cardStyle"
-    :class="['msg', msg.isUser ? 'msg-user' : 'msg-bot']"
-  >
-    <!-- AI -->
-    <div  v-if="msg.type === 'markdown'" v-html="renderMarkdown(msg.content)"></div>
+  <div :class="['msg-row', msg.isUser ? 'row-user' : 'row-bot']">
+    
+    <!-- AI头像 -->
+    <img
+      v-if="!msg.isUser"
+      class="avatar"
+      src="/ai.png"
+    />
 
-    <!-- 用户 -->
-    <div  v-else v-html="msg.content"></div>
+    <n-card
+      content-style="padding: 8px 12px;"
+      :style="cardStyle"
+      :class="['msg', msg.isUser ? 'msg-user' : 'msg-bot']"
+    >
+      <!-- AI -->
+      <div v-if="msg.type === 'markdown'" v-html="renderMarkdown(msg.content)"></div>
 
-    <!-- 打字光标 -->
-    <span v-if="msg.loading" class="cursor">▌</span>
-  </n-card>
+      <!-- 用户 -->
+      <div v-else v-html="msg.content"></div>
+
+      <!-- 打字光标 -->
+      <span v-if="msg.loading" class="cursor">▌</span>
+    </n-card>
+
+    <!-- 用户头像 -->
+    <img
+      v-if="msg.isUser"
+      class="avatar"
+      src="/user.png"
+    />
+
+  </div>
 </template>
 
 <script setup>
@@ -33,11 +51,47 @@ const cardStyle = computed(() => ({
   maxWidth: "70%",
   width: "fit-content",
   wordBreak: "break-word",
-  alignSelf: props.msg.isUser ? "flex-end" : "flex-start",
 }));
 </script>
 
 <style scoped>
+
+/* 整行布局 */
+.msg-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+/* 用户在右边 */
+.row-user {
+  justify-content: flex-end;
+}
+
+/* AI在左边 */
+.row-bot {
+  justify-content: flex-start;
+}
+
+/* 头像 */
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.1);
+
+}
+.avatar {
+  transition: transform 0.2s;
+}
+
+.avatar:hover {
+  transform: scale(1.05);
+}
+/* 气泡 */
 .msg {
   display: inline-block;
   max-width: 68%;
@@ -48,6 +102,7 @@ const cardStyle = computed(() => ({
   backdrop-filter: blur(10px);
 }
 
+/* 用户气泡 */
 .msg-user {
   background: rgba(119, 103, 255, 0.22);
   border: 1px solid rgba(119, 103, 255, 0.38);
@@ -55,13 +110,16 @@ const cardStyle = computed(() => ({
   text-align: right;
 }
 
+/* AI气泡 */
 .msg-bot {
-  align-self: flex-start;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: rgba(230, 235, 255, 0.87);
   text-align: left;
 }
+
+
+
 
 /* 光标 */
 .cursor {
