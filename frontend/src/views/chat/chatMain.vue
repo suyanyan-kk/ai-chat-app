@@ -8,8 +8,8 @@
     <div class="chat-body">
       <div class="msg-list" ref="msgList">
           <ChatMessage
-            v-for="(msg, index) in chatStore.currentMessages"
-            :key="msg.id || index"
+            v-for="(msg) in chatStore.currentMessages"
+            :key="msg.id"
             :msg="msg"
           />
       </div>
@@ -54,6 +54,9 @@ const messages = ref([{
   // time: Date.now(),
   // loading: false,
   //  id: Date.now() + Math.random(), // ⭐ 唯一ID
+  //  messageIndex:0 // ⭐ 命中的消息位置
+
+
  }]);
 
 
@@ -134,6 +137,7 @@ const handleUserMessage = async (value) => {
     content: value,
     time: Date.now(),
     id: Date.now() + Math.random(), // ⭐ 唯一ID
+    messageIndex: chatStore.getNextMessageIndex() // ⭐ 命中的消息位置
   })
 
   newMessage.value = ""
@@ -149,6 +153,7 @@ const createAIMessage = () => {
     loading: true,
     time: Date.now(),
     id: Date.now() + Math.random(), // ⭐ 唯一ID
+    messageIndex: chatStore.getNextMessageIndex() // ⭐ 命中的消息位置
   })
 
   chatStore.addAIMessage(aiMessage)

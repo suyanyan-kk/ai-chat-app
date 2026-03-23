@@ -11,7 +11,6 @@ export const useChatStore = defineStore("chat", {
       //   messages: [],
       //   createdAt: Date.now(),
       //   matchType: "title" | "message",
-      //   messageIndex // ⭐ 命中的消息位置
       //   messages: [{
       //     id: Date.now() + Math.random(), // ⭐ 唯一ID
       //     type: "markdown",
@@ -19,8 +18,11 @@ export const useChatStore = defineStore("chat", {
       //     role: "AI",//角色：AI 或 User
       //     content: "你好",
       //     time: Date.now(),
-      //     loading: false
-      //   }]
+      //     loading: false,
+      //     messageIndex // ⭐ 命中的消息位置
+
+      //   }],
+      //   messageIndexCounter: 1 
       // }
     ],
     currentSessionId: null,
@@ -54,16 +56,18 @@ export const useChatStore = defineStore("chat", {
         }
 
         // ⭐ 2. 消息匹配
-        // session.messages.forEach((msg, index) => {
-        //   if (msg.content?.toLowerCase().includes(keyword)) {
-        //     results.push({
-        //       id: session.id,
-        //       title: session.title,
-        //       matchType: "message",
-        //       // messageIndex: index
-        //     })
-        //   }
-        // })
+        session.messages.forEach((msg, index) => {
+          if (msg.content?.toLowerCase().includes(keyword)) {
+            results.push({
+              id: session.id,
+              title: session.title,
+              matchType: "message",
+              message: {
+                messageIndex: index
+              }
+            })
+          }
+        })
       })
 
       return results
@@ -78,7 +82,6 @@ export const useChatStore = defineStore("chat", {
         title: "新对话",
         createdAt: Date.now(),
         matchType: "title" | "message",
-        // messageIndex, // ⭐ 命中的消息位置
         messages: [
           {
             type: "text",
@@ -88,8 +91,11 @@ export const useChatStore = defineStore("chat", {
             time: Date.now(),
             loading: false,
             id: Date.now() + Math.random(), // ⭐ 唯一ID
+            messageIndex:0, // ⭐ 命中的消息位置
           }
-        ]
+        ],
+        // messageIndex 应该由 session 内的计数器统一生成
+        messageIndexCounter: 1 // ✅ 从1开始
       })
       this.currentSessionId = id
     },
@@ -112,6 +118,15 @@ export const useChatStore = defineStore("chat", {
 
       return session
     },
+    getNextMessageIndex() {
+  const session = this.getCurrentSession()
+  if (!session) return 0
+
+  const index = session.messageIndexCounter
+  session.messageIndexCounter++
+
+  return index
+},
     deleteSession(id) {
       this.sessions = this.sessions.filter(s => s.id !== id)
       // 如果删除的是当前会话，切换到第一个会话（如果有的话）
