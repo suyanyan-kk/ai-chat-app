@@ -3,7 +3,8 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 # 聊天
 chat_prompt = ChatPromptTemplate.from_messages([
-    ("system", "你是一个前端开发专家，回答要简洁清晰"),
+    ("system", "你是一个简洁的AI助手"),
+    # ("system", "你是一个前端开发专家，回答要简洁清晰"),
     MessagesPlaceholder(variable_name="history"),
     ("human", "{input}")
 ])

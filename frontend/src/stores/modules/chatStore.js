@@ -4,32 +4,69 @@ import { v4 as uuidv4 } from "uuid"
 export const useChatStore = defineStore("chat", {
   state: () => ({
     sessions: [
-    // 初始数据，方便调试
-    //   {
-    //   id: uuidv4(),
-    //   title: "新对话",
-    //   messages: [],
-    //   createdAt: Date.now(),
-    //   messages: [{
-    //     type: "markdown",
-    //     isUser: false,
-    //     role: "AI",//角色：AI 或 User
-    //     content: "你好",
-    //     time: Date.now(),
-    //     loading: false
-    //   }]
-    // }
-  ],
+      // 初始数据，方便调试
+      //   {
+      //   id: uuidv4(),
+      //   title: "新对话",
+      //   messages: [],
+      //   createdAt: Date.now(),
+      //   matchType: "title" | "message",
+      //   messageIndex // ⭐ 命中的消息位置
+      //   messages: [{
+      //     id: Date.now() + Math.random(), // ⭐ 唯一ID
+      //     type: "markdown",
+      //     isUser: false,
+      //     role: "AI",//角色：AI 或 User
+      //     content: "你好",
+      //     time: Date.now(),
+      //     loading: false
+      //   }]
+      // }
+    ],
     currentSessionId: null,
+    keyword: "" // ⭐ 搜索关键词
   }),
 
   getters: {
+    // 获取当前会话对象
     currentSession(state) {
       return state.sessions.find(s => s.id === state.currentSessionId)
     },
     // 获取当前会话的消息列表
     currentMessages() {
       return this.currentSession?.messages || []
+    },
+    // ⭐ 搜索后的会话列表
+    searchResults(state) {
+      if (!state.keyword) return []
+
+      const keyword = state.keyword.toLowerCase()
+      const results = []
+
+      state.sessions.forEach(session => {
+        // ⭐ 1. 标题匹配
+        if (session.title?.toLowerCase().includes(keyword)) {
+          results.push({
+            id: session.id,
+            title: session.title,
+            matchType: "title"
+          })
+        }
+
+        // ⭐ 2. 消息匹配
+        // session.messages.forEach((msg, index) => {
+        //   if (msg.content?.toLowerCase().includes(keyword)) {
+        //     results.push({
+        //       id: session.id,
+        //       title: session.title,
+        //       matchType: "message",
+        //       // messageIndex: index
+        //     })
+        //   }
+        // })
+      })
+
+      return results
     }
   },
 
@@ -40,6 +77,8 @@ export const useChatStore = defineStore("chat", {
         id,
         title: "新对话",
         createdAt: Date.now(),
+        matchType: "title" | "message",
+        // messageIndex, // ⭐ 命中的消息位置
         messages: [
           {
             type: "text",
@@ -47,7 +86,8 @@ export const useChatStore = defineStore("chat", {
             role: "AI",
             content: "你好 👋 我是你的 AI 助手",
             time: Date.now(),
-            loading: false
+            loading: false,
+            id: Date.now() + Math.random(), // ⭐ 唯一ID
           }
         ]
       })
@@ -57,21 +97,21 @@ export const useChatStore = defineStore("chat", {
       this.currentSessionId = id
     },
     getCurrentSession() {
-  const session = this.sessions.find(
-    s => s.id === this.currentSessionId
-  )
+      const session = this.sessions.find(
+        s => s.id === this.currentSessionId
+      )
 
-  if (!session) {
-    console.warn("⚠️ 当前 session 不存在")
-    return {
-      id: null,
-      title: "新会话",
-      messages: []
-    }
-  }
+      if (!session) {
+        console.warn("⚠️ 当前 session 不存在")
+        return {
+          id: null,
+          title: "新会话",
+          messages: []
+        }
+      }
 
-  return session
-},
+      return session
+    },
     deleteSession(id) {
       this.sessions = this.sessions.filter(s => s.id !== id)
       // 如果删除的是当前会话，切换到第一个会话（如果有的话）
@@ -101,11 +141,13 @@ export const useChatStore = defineStore("chat", {
       msgs[msgs.length - 1].loading = false
     },
     updateSessionTitle(sessionId, title) {
-      debugger
       const session = this.sessions.find(s => s.id === sessionId);
       if (session) {
         session.title = title;
       }
+    },
+    setKeyword(keyword) {
+      this.keyword = keyword
     }
   }
 })
