@@ -91,7 +91,7 @@ export const useChatStore = defineStore("chat", {
             time: Date.now(),
             loading: false,
             id: Date.now() + Math.random(), // ⭐ 唯一ID
-            messageIndex:0, // ⭐ 命中的消息位置
+            messageIndex: 0, // ⭐ 命中的消息位置
           }
         ],
         // messageIndex 应该由 session 内的计数器统一生成
@@ -119,14 +119,14 @@ export const useChatStore = defineStore("chat", {
       return session
     },
     getNextMessageIndex() {
-  const session = this.getCurrentSession()
-  if (!session) return 0
+      const session = this.getCurrentSession()
+      if (!session) return 0
 
-  const index = session.messageIndexCounter
-  session.messageIndexCounter++
+      const index = session.messageIndexCounter
+      session.messageIndexCounter++
 
-  return index
-},
+      return index
+    },
     deleteSession(id) {
       this.sessions = this.sessions.filter(s => s.id !== id)
       // 如果删除的是当前会话，切换到第一个会话（如果有的话）
