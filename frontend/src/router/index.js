@@ -11,7 +11,8 @@ import LangchainPractice from '../views/test/langchainPractice.vue'
 
 // ⭐ 新增：布局组件（关键）
 import QaContent from '../views/chat/index.vue'
-
+// 资料库管理
+import KnowledgeBase from '../views/knowledgeBase/index.vue'
 const routes = [
   {
     path: '/',
@@ -31,8 +32,21 @@ const routes = [
         name: 'chat',
         component: Chat,
         meta: { title: '对话' }
-      }
+      },
     ]
+  },
+  {
+    path: '/kb',
+    component: KnowledgeBase,
+    meta: { title: '资料库管理' },
+    // children: [
+      // {
+      //   path: 'uploadDocument',
+      //   name: 'uploadDocument',
+      //   component: Chat,
+      //   meta: { title: '上传资料' }
+      // },
+    // ]
   },
   {
     path: '/langchain',
