@@ -18,14 +18,14 @@
       />
 
       <n-input
-        v-model:value="localForm.content"
+        v-model:value="localForm.description"
         type="textarea"
         style="
           color: #fff;
           background: transparent;
           border: 1px solid rgba(255, 255, 255, 0.08);
         "
-        placeholder="输入内容..."
+        placeholder="输入描述内容..."
         class="input"
       />
       <!-- 🔥 新增：上传区域（仅新建显示） -->
@@ -51,7 +51,7 @@
         </n-upload>
       </div>
       <div class="footer">
-        <n-button ghost @click="close" style="color: #fff">取消</n-button>
+        <n-button ghost @click="close" color="#fff">取消</n-button>
         <n-button type="primary" @click="handleSubmit"> 确认 </n-button>
       </div>
     </div>
@@ -60,28 +60,42 @@
 
 <script setup>
 import { ref, watch, computed } from "vue";
+import { useKnowledgeBaseStore } from "@/stores/modules/knowledgeBase";
+
+const store = useKnowledgeBaseStore();
 
 const props = defineProps({
   show: Boolean,
   form: Object,
   isEdit: Boolean,
+  node: Object,
+  parentId: [String, Number,null],
 });
-
-const emit = defineEmits(["update:show",]);
-
-const localForm = ref({});
+watch(
+  () => props.node,
+  (node) => {
+    if (node&&props.isEdit) { // 编辑回显数据
+      localForm.value = JSON.parse(JSON.stringify(node))
+    }
+  },
+  {
+    immediate: true
+  }
+)
+const localForm = ref({
+    title: '',
+    type: 'folder'|| "file",
+    parentId:'' ,
+    description:'',
+    content: ''
+});
+const fileList = ref([]);
 const visible = computed({
   get: () => props.show,
   set: (val) => emit("update:show", val),
 });
-// 同步数据
-watch(
-  (val) => {
-    localForm.value = { ...val };
-  },
-  { immediate: true }
-);
-const fileList = ref([]);
+const emit = defineEmits(["update:show",]);
+
 const handleDrop = (e) => {
   console.log("拖拽触发", e)
 }
@@ -91,31 +105,39 @@ const handleFileChange = ({ fileList: files }) => {
 };
 const close = () => {
   emit("update:show", false);
+  localForm.value = {};
+  fileList.value = []; 
 };
 
 const handleSubmit = (data) => {
     // 新增和编辑共用一个接口，后端根据是否有 id 来判断
-  if(!isEdit.value) {
+  if(!props.isEdit) {
     addHandleSubmit(data)
   }else{
     editHandleSubmit(data)
   }
+  close();
 };
 const editHandleSubmit = async (data) => {
-  isEdit.value = true;
-  showModal.value = true;
-  kbStore.updateNode(data.id, {
-    title: data.title,
-    content: data.content
+  store.updateNode(data.id, {
+    title: localForm.value.title,
+    description: localForm.value.description,
+    content: localForm.value.content
   })
+  // store.buildTree
 }
-const addHandleSubmit = async (data) => {
-  kbStore.addNode({
-    title: data.title,
-    type: data.type || "file",
-    parentId: data.parentId || null,
-    content: data.content
+const addHandleSubmit = async () => {
+  debugger
+  console.log(props.parentId, '1232144')
+  store.addNode({
+    title: localForm.value.title,
+    type: localForm.value.type || "file",
+    parentId: props.parentId || null,
+    description:localForm.value.description,
+    content: localForm.value.content
   })
+  //  store.buildTree
+
 }
 </script>
 

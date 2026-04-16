@@ -1,17 +1,37 @@
 <template>
   <div class="kb-node">
     <!-- 当前节点 -->
-    <div class="node-row">
+    <div class="node-row" @click="handleClick">
       <span> {{ node.type === "file" ? "📄" : "📁" }} {{ node.title }} </span>
 
-      <!-- ✅ 只有文件才显示按钮 -->
-      <div  class="actions">
-        <n-button class="btn-primary" @click="handleKnowledgeBaseModal('add')"> + 新建 </n-button>
-        
-        <n-button class="edit-btn" ghost size="small" @click="handleKnowledgeBaseModal('edit', node.id)">
+      <!-- ✅ 只有文件才显示按钮 v-if="node.type === 'file'"-->
+      <div class="actions" >
+        <n-button
+          class="btn-primary"
+          ghost
+          type="primary"
+          :parentId="node.parentId"
+          @click="handleKnowledgeBaseModal('add')"
+        >
+          + 新建子目录
+        </n-button>
+
+        <n-button
+          class="edit-btn"
+          color="#fff"
+          ghost
+          size="small"
+          @click="handleKnowledgeBaseModal('edit', node.id)"
+        >
           编辑
         </n-button>
-        <n-button ghost size="small" type="error" @click="remove(node.id)">
+        <n-button
+          class="error-btn"
+          ghost
+          size="small"
+          type="error"
+          @click="remove(node.id)"
+        >
           删除
         </n-button>
       </div>
@@ -22,11 +42,8 @@
       <KbTree v-for="child in children" :key="child.id" :node="child" />
     </div>
   </div>
-    <!-- 新增编辑弹窗组件 -->
-    <KnowledgeModal
-      v-model:show="showModal"
-      :isEdit="isEdit"
-    />
+  <!-- 新增编辑弹窗组件 -->
+  <KnowledgeModal v-model:show="showModal" :isEdit="isEdit" :parentId="node.parentId"/>
 </template>
 
 <script setup>
@@ -35,25 +52,32 @@ import KnowledgeModal from "@/components/knowledgeBase/KnowledgeModal.vue";
 import { useKnowledgeBaseStore } from "@/stores/modules/knowledgeBase";
 
 const store = useKnowledgeBaseStore();
-
+const showModal = ref(false);
+const isEdit = ref(false);
 const props = defineProps({
   node: Object,
 });
 
 const children = computed(() => store.getChildren(props.node.id));
-
+// 👉 点击文件夹展开/折叠
+const handleClick = () => {
+  if (props.node.type === "folder") {
+    store.toggleFolder(props.node.id)
+  }
+}
 const handleKnowledgeBaseModal = (type) => {
-    if(type === 'add') {
-        // 新增
-        isEdit.value = false;
-    } else {
-        // 编辑
-        isEdit.value = true;
-    }
-    showModal.value = true;
+  if (type === "add") {
+    // 新增
+    isEdit.value = false;
+  } else {
+    // 编辑
+    isEdit.value = true;
+  }
+  showModal.value = true;
 };
-
-
+const remove = (id) => {
+  store.deleteNode(id);
+};
 </script>
 
 <style scoped>
@@ -100,17 +124,39 @@ const handleKnowledgeBaseModal = (type) => {
   display: flex;
   gap: 8px;
 }
-.edit-btn,.btn-primary {
+.edit-btn {
   position: relative;
   overflow: hidden;
   color: #fff;
 }
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+}
+.edit-btn,
+.btn-primary,
+.error-btn {
+  outline: none !important;
+}
 
-.edit-btn:hover,.btn-primary:hover {
+/* 🔥 取消点击后的 focus 高亮 */
+.btn-primary:focus,
+.btn-primary:focus-visible,
+.edit-btn:focus,
+.edit-btn:focus-visible,
+.error-btn:focus,
+.error-btn:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: #fff !important;
+}
+.edit-btn:hover,
+.btn-primary:hover {
   color: #6edcff;
 }
 
-.edit-btn:hover::after,.btn-primary:hover::after {
+.edit-btn:hover::after,
+.btn-primary:hover::after {
   content: "";
   position: absolute;
   inset: 0;
