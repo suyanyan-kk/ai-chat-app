@@ -6,71 +6,59 @@
         <h2>📚 资料库</h2>
         <p class="sub">Knowledge Base</p>
       </div>
-
-      <n-button class="btn-primary" ghost type="primary" @click="handleKnowledgeBaseModal('add')"> + 新建目录 </n-button>
     </div>
+  </div>
+  <div class="kb-box">
+    <div class="box-list">
+      <!-- 搜索 -->
+      <div class="search-box">
+        <n-input v-model:value="keyword" placeholder="🔍 搜索资料..." clearable />
+      </div>
+      <!-- 列表 -->
+      <n-infinite-scroll style="height: 65vh" :distance="10" @load="handleLoad">
+        <KbTree v-for="item in list" :key="item.id" :node="item" />
+       <!-- <div v-if="loading" class="text">加载中...</div> -->
+       <!-- <div v-if="noMore" class="text">没有更多了 🤪</div> -->
+      </n-infinite-scroll>
 
-    <!-- 搜索 -->
-    <div class="search-box">
-      <n-input v-model:value="keyword" placeholder="🔍 搜索资料..." clearable />
     </div>
-
-    <!-- 列表 -->
-    <div class="kb-list">
-      <KbTree
-        v-for="item in list"
-        :key="item.id"
-        :node="item"
-      />
+    <div class="box-view">
+      <PreviewofData />
     </div>
-     <!-- 新增编辑弹窗组件 -->
-    <KnowledgeModal
-      v-model:show="showModal"
-      :isEdit="isEdit"
-      :parentId="null"
-    />
-  
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import KbTree from "@/components/knowledgeBase/KbTree.vue";
-import { useKnowledgeBaseStore } from "@/stores/modules/knowledgeBase"
-import KnowledgeModal from "@/components/knowledgeBase/KnowledgeModal.vue";
-import { storeToRefs } from "pinia"
-const kbStore = useKnowledgeBaseStore()
+import PreviewofData from "@/components/knowledgeBase/PreviewofData.vue";
+import { useKnowledgeBaseStore } from "@/stores/modules/knowledgeBase";
+import { storeToRefs } from "pinia";
+import { getKnowledge } from "@/api/modules/knowledge.js";
+
+const loading = ref(false);
+const kbStore = useKnowledgeBaseStore();
 const keyword = ref("");
-const showModal = ref(false);
-const isEdit = ref(false);
 // 表单数据 俩种响应式
-const list = computed(() => kbStore.buildTree)
-//  list: [
-//       { id: 1, title: "AI", parentId: null, type: "folder", open: false },
-//       { id: 2, title: "langchain", parentId: 1, type: "folder", open: false },
-//       { id: 3, title: "output.md", parentId: 2, type: "file", content: "xxx" }
-//     ]
-  // tree: [
-    //   {
-    //     id: 1, title: "AI", parentId: null, type: "folder", description: '', open: false,
-    //     children: [{
-    //       id: 2, title: "langchain", parentId: 1, type: "folder", description: '', open: false,
-    //       children: [
-    //         { id: 3, title: "output.md", parentId: 2, type: "file", description: '', content: "xxx" }
-    //       ]
-    //     }]
-    //   },
-    // ]
-const handleKnowledgeBaseModal = (type) => {
-    if(type === 'add') {
-        // 新增
-        isEdit.value = false;
-    } else {
-        // 编辑
-        isEdit.value = true;
-    }
-    showModal.value = true;
-};
+const { buildTree } = storeToRefs(kbStore);
+const list = buildTree;
+
+// const items = ref(Array.from({ length: 10 }, (_, i) => mock(i)));
+
+// const noMore = computed(() => items.value.length > 16);
+// async function handleLoad() {
+//   if (loading.value || noMore.value)
+//     return;
+//   loading.value = true;
+//   await new Promise((resolve) => setTimeout(resolve, 1e3));
+//   items.value.push(...[mock(items.value.length), mock(items.value.length + 1)]);
+//   loading.value = false;
+// }
+onMounted(async () => {
+  const knowledgeList = await getKnowledge();
+  kbStore.setList(knowledgeList);
+});
+
 </script>
 
 <style scoped>
@@ -78,7 +66,35 @@ const handleKnowledgeBaseModal = (type) => {
   padding: 20px;
   color: #fff;
 }
+.box-view {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 15px;
+  box-sizing: border-box;
+}
+.kb-box {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  box-sizing: border-box;
+  color: #fff;
+}
+.box-list {
+  width: 300px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 15px;
+  box-sizing: border-box;
+}
+.text {
+  text-align: center;
+}
+/* .list{
+  max-height: 70vh;
+  overflow-y: auto; 
 
+} */
 /* 头部 */
 .kb-header {
   display: flex;
@@ -105,7 +121,7 @@ const handleKnowledgeBaseModal = (type) => {
   outline: none !important;
 }
 .btn-primary:focus,
-.btn-primary:focus-visible{
+.btn-primary:focus-visible {
   outline: none !important;
   box-shadow: none !important;
 }
@@ -129,9 +145,9 @@ const handleKnowledgeBaseModal = (type) => {
   pointer-events: none;
 }
 
-
 /* 搜索框科技风 */
 .search-box {
+  width: 100%;
   margin: 15px 0;
 }
 

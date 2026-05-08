@@ -3,80 +3,143 @@
     <!-- 当前节点 -->
     <div class="node-row" @click="handleClick">
       <span> {{ node.type === "file" ? "📄" : "📁" }} {{ node.title }} </span>
-
-      <!-- ✅ 只有文件才显示按钮 v-if="node.type === 'file'"-->
-      <div class="actions" >
-        <n-button
-          class="btn-primary"
-          ghost
-          type="primary"
-          :parentId="node.parentId"
-          @click="handleKnowledgeBaseModal('add')"
-        >
-          + 新建子目录
+      <div class="more-wrapper">
+      <n-dropdown
+        trigger="hover"
+        placement="bottom-start"
+        :options="options"
+        @select="handleSelect($event, node)"
+        size="large"
+      >
+        <n-button class="more-btn" :focusable="false" quaternary type="primary">
+          更多
         </n-button>
-
-        <n-button
-          class="edit-btn"
-          color="#fff"
-          ghost
-          size="small"
-          @click="handleKnowledgeBaseModal('edit', node.id)"
-        >
-          编辑
-        </n-button>
-        <n-button
-          class="error-btn"
-          ghost
-          size="small"
-          type="error"
-          @click="remove(node.id)"
-        >
-          删除
-        </n-button>
+      </n-dropdown>
       </div>
     </div>
 
     <!-- 子节点 -->
-    <div v-if="children.length">
-      <KbTree v-for="child in children" :key="child.id" :node="child" />
+    <div v-if="children.length > 0 && node.is_open" class="children">
+      <KbTree  v-for="child in children" :key="child.id" :node="child" />
     </div>
   </div>
-  <!-- 新增编辑弹窗组件 -->
-  <KnowledgeModal v-model:show="showModal" :isEdit="isEdit" :parentId="node.parentId"/>
+  <!-- 新建弹窗组件 -->
+  <KnowledgeModal
+    v-model:show="showModal"
+    :type="type"
+    :parentId="node.id"
+  />
 </template>
 
 <script setup>
 import { ref, computed } from "vue";
 import KnowledgeModal from "@/components/knowledgeBase/KnowledgeModal.vue";
 import { useKnowledgeBaseStore } from "@/stores/modules/knowledgeBase";
-
+import { deleteKnowledge,getKnowledgeDetail } from "@/api/modules/knowledge.js";
+import message from "@/utils/message";
+const options = [
+  {
+    label: "新增",
+    key: "create",
+    children: [
+      {
+        label: "目录",
+        key: "addFolder",
+      },
+      {
+        label: "文件",
+        key: "addFile",
+      },
+    ],
+  },
+  {
+    label: "删除",
+    key: "delete",
+  },
+  {
+    label: "重命名",
+    key: "reName",
+  },
+  {
+        label:"置顶",
+        key:"top"
+      },
+  {
+    label:"更多",
+    key:"more",
+    children:[
+      {
+        label: "复制",
+        key: "copy",
+      },
+      {
+        label: "移动",
+        key: "move",
+      },
+      {
+        label:"下载",
+        key:"download"
+       },
+       {
+        label:"分享",
+        key:"share"
+      }
+    ]
+  }
+];
+const currentDetail = ref(null);
+const type = ref("file"); // 用于区分是新建文件还是目录
 const store = useKnowledgeBaseStore();
 const showModal = ref(false);
-const isEdit = ref(false);
 const props = defineProps({
   node: Object,
 });
-
-const children = computed(() => store.getChildren(props.node.id));
-// 👉 点击文件夹展开/折叠
-const handleClick = () => {
-  if (props.node.type === "folder") {
-    store.toggleFolder(props.node.id)
-  }
+function handleSelect(key, node) {
+  console.log("选中了", key, node);
+  if (key === "addFolder") {
+    type.value = "folder";
+    showModal.value = true;
+  } else if (key === "addFile") {
+    type.value = "file";
+    showModal.value = true;
+  } else if (key === "delete") {
+    // 删除
+    remove(node.id);
+  } else if (key === "reName") {
+    // 重命名
+    // const newTitle = prompt("请输入新的名称", node.title);
+    // if (newTitle) {
+    //   store.renameNode(node.id, newTitle);
+    // }
 }
-const handleKnowledgeBaseModal = (type) => {
-  if (type === "add") {
-    // 新增
-    isEdit.value = false;
-  } else {
-    // 编辑
-    isEdit.value = true;
+}
+const children = computed(() => store.getChildren(props.node.id));
+
+// 👉 点击文件夹展开/折叠
+const handleClick = async() => {
+  if (props.node.type === "folder") {
+    store.toggleFolder(props.node.id);
   }
+    const res = await getKnowledgeDetail(props.node.id)
+      if(res.code === 0) {  
+        currentDetail.value = res.data
+        store.setCurrentId(props.node.id);
+        store.getcurrentDetail(res.data);
+      }else {
+        message.error("获取资料详情失败");
+      }
+};
+const handleKnowledgeBaseModal = (type) => {
   showModal.value = true;
 };
-const remove = (id) => {
-  store.deleteNode(id);
+const remove = async(nodeId) => {
+    const stutas = await deleteKnowledge(nodeId);
+    if(stutas.code === 0) {
+      message.success(stutas.message);
+      store.deleteNode(nodeId);
+    }else{
+      message.error("删除失败");
+    }
 };
 </script>
 
@@ -93,10 +156,8 @@ const remove = (id) => {
   justify-content: space-between;
   padding: 16px;
   border-radius: 12px;
-
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
-
   transition: all 0.2s;
 }
 
@@ -119,51 +180,6 @@ const remove = (id) => {
 }
 .kb-node {
   margin-left: 10px;
-}
-.actions {
-  display: flex;
-  gap: 8px;
-}
-.edit-btn {
-  position: relative;
-  overflow: hidden;
-  color: #fff;
-}
-.btn-primary {
-  position: relative;
-  overflow: hidden;
-}
-.edit-btn,
-.btn-primary,
-.error-btn {
-  outline: none !important;
-}
-
-/* 🔥 取消点击后的 focus 高亮 */
-.btn-primary:focus,
-.btn-primary:focus-visible,
-.edit-btn:focus,
-.edit-btn:focus-visible,
-.error-btn:focus,
-.error-btn:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
-  border-color: #fff !important;
-}
-.edit-btn:hover,
-.btn-primary:hover {
-  color: #6edcff;
-}
-
-.edit-btn:hover::after,
-.btn-primary:hover::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  border: 1px solid rgba(110, 220, 255, 0.6);
-  box-shadow: 0 0 10px rgba(110, 220, 255, 0.4);
-  pointer-events: none;
 }
 .node-row {
   display: flex;

@@ -1,4 +1,4 @@
-//   ⭐ 核心请求（带拦截器）
+// ⭐ 核心请求（带拦截器）
 import { InterceptorManager } from "./interceptor"
 
 const BASE_URL = "/api"
@@ -9,13 +9,20 @@ const responseInterceptors = new InterceptorManager()
 // ⭐ 注册默认拦截器（自动加 token）
 requestInterceptors.use(async (config) => {
   const token = localStorage.getItem("token")
+
+  const headers = {
+    ...(config.headers || {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  }
+
+  // ⭐ FormData 不要设置 Content-Type
+  if (!(config.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json"
+  }
+
   return {
     ...config,
-    headers: {
-      "Content-Type": "application/json",
-      ...(config.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
-    }
+    headers
   }
 })
 
@@ -37,6 +44,7 @@ responseInterceptors.use(async (res) => {
     const text = await res.text()
     throw new Error(text || "请求失败")
   }
+
   return res
 })
 
@@ -51,6 +59,7 @@ export async function request(url, options = {}) {
   config = await requestInterceptors.run(config)
 
   let response
+
   try {
     response = await fetch(config.url, config)
   } catch (err) {
@@ -64,16 +73,36 @@ export async function request(url, options = {}) {
   return response.json()
 }
 
-// 👉 快捷方法
+// 👉 GET
 export const get = (url) => request(url)
 
-export const post = (url, data) =>
-  request(url, {
+// 👉 POST（自动判断 JSON / FormData）
+export const post = (url, data) => {
+  const isFormData = data instanceof FormData
+
+  return request(url, {
     method: "POST",
-    body: JSON.stringify(data)
+    body: isFormData ? data : JSON.stringify(data)
+  })
+}
+
+// 👉 PUT
+export const put = (url, data) => {
+  const isFormData = data instanceof FormData
+
+  return request(url, {
+    method: "PUT",
+    body: isFormData ? data : JSON.stringify(data)
+  })
+}
+
+// 👉 DELETE
+export const del = (url) =>
+  request(url, {
+    method: "DELETE"
   })
 
-// 👉 暴露拦截器（给你扩展）
+// 👉 暴露拦截器
 export const interceptors = {
   request: requestInterceptors,
   response: responseInterceptors

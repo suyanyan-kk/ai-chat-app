@@ -24,4 +24,4 @@ npm run dev
 
 ### 后端
 cd ai-service
-uvicorn app.main:app --reload
+uv run uvicorn app.main:app --reload

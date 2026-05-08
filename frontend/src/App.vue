@@ -1,4 +1,5 @@
 <template>
+  <n-message-provider>
   <div class="layout">
     <!-- 一级菜单 -->
     <aside :class="['sidebar']">
@@ -51,6 +52,7 @@
       </main>
     </div>
   </div>
+  </n-message-provider>
 </template>
 
 <script setup>

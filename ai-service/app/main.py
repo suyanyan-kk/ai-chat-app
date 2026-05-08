@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.chat import router as chat_router
 from app.api.title import router as title_router
 from app.api.health import router as health_router
+from app.api.knowledge import router as knowledge_router
+
 from app.core.exception import register_exception
 from app.core.logger import logger
 import uvicorn
@@ -30,6 +32,7 @@ register_exception(app)
 app.include_router(chat_router)
 app.include_router(title_router)
 app.include_router(health_router)
+app.include_router(knowledge_router)
 def dev():
     uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)
 logger.info("🚀 服务启动成功")

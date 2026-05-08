@@ -2,7 +2,7 @@
   <n-modal v-model:show="visible">
     <div class="modal">
       <h3 class="title">
-        {{ isEdit ? "编辑资料" : "新建资料" }}
+        {{ type === "file" ? "新建文件" : "新建目录" }}
       </h3>
 
       <n-input
@@ -28,11 +28,11 @@
         placeholder="输入描述内容..."
         class="input"
       />
-      <!-- 🔥 新增：上传区域（仅新建显示） -->
-      <div v-if="!isEdit" class="upload">
+      <!-- 🔥 新增：上传区域（仅新建文件时显示） -->
+      <div v-if="type === 'file'" class="upload">
         <n-upload
           multiple
-          style="width: 100%;"
+          style="width: 100%"
           :default-upload="false"
           :on-change="handleFileChange"
           :show-file-list="true"
@@ -40,14 +40,13 @@
           v-model:file-list="fileList"
           :on-drop="handleDrop"
         >
-         <n-upload-dragger >
-          <div class="upload-box">
-            <div class="icon">📄</div>
-            <p>点击或拖拽文件上传</p>
-            <span>支持 PDF / TXT / MD / DOCX</span>
-          </div>
-         </n-upload-dragger>
-
+          <n-upload-dragger>
+            <div class="upload-box">
+              <div class="icon">📄</div>
+              <p>点击或拖拽文件上传</p>
+              <span>支持 PDF / TXT / MD / DOCX</span>
+            </div>
+          </n-upload-dragger>
         </n-upload>
       </div>
       <div class="footer">
@@ -61,84 +60,112 @@
 <script setup>
 import { ref, watch, computed } from "vue";
 import { useKnowledgeBaseStore } from "@/stores/modules/knowledgeBase";
-
+import { addKnowledge,uploadFile } from "@/api/modules/knowledge.js";
+import message from "@/utils/message";
 const store = useKnowledgeBaseStore();
 
 const props = defineProps({
   show: Boolean,
   form: Object,
-  isEdit: Boolean,
   node: Object,
-  parentId: [String, Number,null],
+  type: String, // 这个 type 是为了区分是从目录新建还是从文件新建，因为文件没有 parentId 这个字段，所以需要区分开来
+  parentId: [String, Number, null],
 });
-watch(
-  () => props.node,
-  (node) => {
-    if (node&&props.isEdit) { // 编辑回显数据
-      localForm.value = JSON.parse(JSON.stringify(node))
-    }
-  },
-  {
-    immediate: true
-  }
-)
+
 const localForm = ref({
-    title: '',
-    type: 'folder'|| "file",
-    parentId:'' ,
-    description:'',
-    content: ''
+  title: "",
+  file_id: null,
+  // type: 'folder'|| "file",
+  description: "",
+  content: "",
 });
 const fileList = ref([]);
 const visible = computed({
   get: () => props.show,
   set: (val) => emit("update:show", val),
 });
-const emit = defineEmits(["update:show",]);
+const emit = defineEmits(["update:show"]);
 
 const handleDrop = (e) => {
-  console.log("拖拽触发", e)
-}
+  console.log("拖拽触发", e);
+};
 // 文件变化
-const handleFileChange = ({ fileList: files }) => {
-  fileList.value = files;
+const handleFileChange = async ({ fileList: files }) => {
+  // 目前只支持上传一个文件，所以我们直接取第一个文件来处理
+  fileList.value = files
+  const file = files[0]?.file
+
+  if (!file) {
+    console.log("没有获取到文件")
+    return
+  }
+ const res = await uploadFile(files[0].file);
+  if (res.code === 0) {
+    localForm.value.file_id = res.data.id;
+    message.success("文件上传成功");
+    console.log("文件上传成功，内容已获取", res.data);
+  } else {
+    message.error("文件上传失败");
+    console.log("文件上传失败: " + res.message);
+  }
+  console.log("文件列表更新", fileList.value);
 };
 const close = () => {
   emit("update:show", false);
   localForm.value = {};
-  fileList.value = []; 
+  fileList.value = [];
 };
 
-const handleSubmit = (data) => {
-    // 新增和编辑共用一个接口，后端根据是否有 id 来判断
-  if(!props.isEdit) {
-    addHandleSubmit(data)
-  }else{
-    editHandleSubmit(data)
+const handleSubmit = async(data) => {
+  if (!localForm.value.title) {
+    // 这里可以使用你项目中的消息提示组件
+    message.warning("标题不能为空");
+    return;
   }
-  close();
-};
-const editHandleSubmit = async (data) => {
-  store.updateNode(data.id, {
+  if (props.type === "file" && fileList.value.length === 0 && !localForm.value.file_id) {
+    message.warning("请上传文件");
+    return;
+  }
+  const payload = {
     title: localForm.value.title,
     description: localForm.value.description,
-    content: localForm.value.content
-  })
-  // store.buildTree
-}
-const addHandleSubmit = async () => {
-  debugger
-  console.log(props.parentId, '1232144')
-  store.addNode({
-    title: localForm.value.title,
-    type: localForm.value.type || "file",
-    parentId: props.parentId || null,
-    description:localForm.value.description,
-    content: localForm.value.content
-  })
-  //  store.buildTree
+    type: props.type,
+    parent_id: props.type === "folder" ? null : props.parentId,
+    file_id: localForm.value.file_id,
+    content: props.type === "folder" ? null:localForm.value.content,
 
-}
+  };
+  // console.log(props.parentId, "1232144");
+  addHandleSubmit(payload)
+    .then(() => {
+      // 提交成功后的操作，例如刷新列表等
+      message.success("提交成功");
+    })
+    .catch((err) => {
+      message.error("提交失败", err);
+    });
+  close();
+};
+
+const addHandleSubmit = async (data) => {
+  // ✅ 新增目录（调用接口版）
+  try {
+    const res = await addKnowledge(data);
+   if (res.code === 0) {
+      // 更新本地
+      const newNode = res.data;
+      store.addNode(newNode); // ✅ 将新节点添加到 Pinia 状态中
+      console.log("新增成功");
+      return newNode;
+    } else {
+      console.log("新增失败: " + res.message);
+      return;
+    }
+  } catch (err) {
+    console.error("新增失败", err);
+    throw err;
+  }
+};
 </script>
 
 <style scoped>
@@ -205,7 +232,7 @@ const addHandleSubmit = async () => {
 }
 
 /* 🔥 让内部包裹层也撑满 */
-.upload :deep(.n-upload-trigger  .n-upload-dragger> *) {
+.upload :deep(.n-upload-trigger .n-upload-dragger > *) {
   width: 100%;
 }
 
