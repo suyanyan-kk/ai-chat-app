@@ -1,30 +1,28 @@
 <template>
-  <div class="kb-page">
-    <!-- 头部 -->
-    <div class="kb-header">
+  <!-- <div class="kb-page"> -->
+  <!-- 头部 -->
+  <!-- <div class="kb-header">
       <div>
         <h2>📚 资料库</h2>
         <p class="sub">Knowledge Base</p>
       </div>
-    </div>
-  </div>
+    </div> -->
+  <!-- </div> -->
   <div class="kb-box">
     <div class="box-list">
       <!-- 搜索 -->
       <div class="search-box">
         <n-input v-model:value="keyword" placeholder="🔍 搜索资料..." clearable />
       </div>
-      <!-- 列表 -->
-      <n-infinite-scroll style="height: 65vh" :distance="10" @load="handleLoad">
-        <KbTree v-for="item in list" :key="item.id" :node="item" />
-       <!-- <div v-if="loading" class="text">加载中...</div> -->
-       <!-- <div v-if="noMore" class="text">没有更多了 🤪</div> -->
+      <!-- 列表 @load="handleLoad"-->
+      <n-infinite-scroll style="height: 65vh" :distance="10">
+        <KbTree v-for="item in list" :key="item.id" :node="item" @select="handleSelect" />
       </n-infinite-scroll>
-
     </div>
     <div class="box-view">
-      <PreviewofData />
+      <component :is="currentComponent" v-bind="currentComponentProps" />
     </div>
+    <CreateFileModal v-model:show="showCreateFile" @submit="handleCreateFile" />
   </div>
 </template>
 
@@ -32,17 +30,65 @@
 import { ref, computed, onMounted } from "vue";
 import KbTree from "@/components/knowledgeBase/KbTree.vue";
 import PreviewofData from "@/components/knowledgeBase/PreviewofData.vue";
+import EditorWrapper from "@/components/knowledgeBase/EditorWrapper.vue";
 import { useKnowledgeBaseStore } from "@/stores/modules/knowledgeBase";
 import { storeToRefs } from "pinia";
 import { getKnowledge } from "@/api/modules/knowledge.js";
-
+import CreateFileModal from "@/components/knowledgeBase/CreateFileModal.vue";
+// 当前视图：预览、编辑等addFile
+const currentView = ref("preview");
 const loading = ref(false);
 const kbStore = useKnowledgeBaseStore();
 const keyword = ref("");
 // 表单数据 俩种响应式
 const { buildTree } = storeToRefs(kbStore);
 const list = buildTree;
+const componentMap = {
+  preview: PreviewofData,
+  createFile: EditorWrapper,
+};
 
+const currentComponent = computed(() => {
+  return componentMap[currentView.value] || PreviewofData;
+});
+
+const currentComponentProps = computed(() => {
+  switch (currentView.value) {
+    case "createFile":
+      return {
+        createFileData: createFileData.value,
+      };
+
+    default:
+      return {};
+  }
+});
+const handleSelect = (operationType, node) => {
+  console.log("选中节点：", node);
+  if (operationType === "createFile") {
+    showCreateFile.value = true;
+    createFileData.value.parent_id = node.id;
+    createFileData.value.type = "file";
+  } else {
+    currentView.value = "preview";
+  }
+  // 在这里可以根据需要处理选中节点的逻辑，比如展示详情等
+};
+const showCreateFile = ref(false);
+
+const createFileData = ref({
+  title: "",
+  description: "",
+  file_type: "",
+  type: "",
+  parent_id: null,
+});
+const handleCreateFile = async (data) => {
+  createFileData.value.title = data.title;
+  createFileData.value.description = data.description;
+  createFileData.value.file_type = data.file_type;
+  currentView.value = "createFile";
+};
 // const items = ref(Array.from({ length: 10 }, (_, i) => mock(i)));
 
 // const noMore = computed(() => items.value.length > 16);
@@ -58,7 +104,6 @@ onMounted(async () => {
   const knowledgeList = await getKnowledge();
   kbStore.setList(knowledgeList);
 });
-
 </script>
 
 <style scoped>

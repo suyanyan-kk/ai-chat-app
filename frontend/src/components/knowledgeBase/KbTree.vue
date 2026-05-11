@@ -4,38 +4,39 @@
     <div class="node-row" @click="handleClick">
       <span> {{ node.type === "file" ? "📄" : "📁" }} {{ node.title }} </span>
       <div class="more-wrapper">
-      <n-dropdown
-        trigger="hover"
-        placement="bottom-start"
-        :options="options"
-        @select="handleSelect($event, node)"
-        size="large"
-      >
-        <n-button class="more-btn" :focusable="false" quaternary type="primary">
-          更多
-        </n-button>
-      </n-dropdown>
+        <n-dropdown
+          trigger="hover"
+          placement="bottom-start"
+          :options="options"
+          @select="handleSelectNode($event, node)"
+          size="large"
+        >
+          <n-button class="more-btn" :focusable="false" quaternary type="primary">
+            更多
+          </n-button>
+        </n-dropdown>
       </div>
     </div>
 
     <!-- 子节点 -->
     <div v-if="children.length > 0 && node.is_open" class="children">
-      <KbTree  v-for="child in children" :key="child.id" :node="child" />
+      <KbTree
+        v-for="child in children"
+        :key="child.id"
+        :node="child"
+        @select="handleChildSelect"
+      />
     </div>
   </div>
   <!-- 新建弹窗组件 -->
-  <KnowledgeModal
-    v-model:show="showModal"
-    :type="type"
-    :parentId="node.id"
-  />
+  <KnowledgeModal v-model:show="showModal" :type="type" :parentId="node.id" />
 </template>
 
 <script setup>
 import { ref, computed } from "vue";
 import KnowledgeModal from "@/components/knowledgeBase/KnowledgeModal.vue";
 import { useKnowledgeBaseStore } from "@/stores/modules/knowledgeBase";
-import { deleteKnowledge,getKnowledgeDetail } from "@/api/modules/knowledge.js";
+import { deleteKnowledge, getKnowledgeDetail } from "@/api/modules/knowledge.js";
 import message from "@/utils/message";
 const options = [
   {
@@ -47,8 +48,8 @@ const options = [
         key: "addFolder",
       },
       {
-        label: "文件",
-        key: "addFile",
+        label: "创建文件",
+        key: "createFile",
       },
     ],
   },
@@ -57,17 +58,22 @@ const options = [
     key: "delete",
   },
   {
+    label: "置顶",
+    key: "top",
+  },
+  {
     label: "重命名",
     key: "reName",
   },
   {
-        label:"置顶",
-        key:"top"
-      },
+    label: "上传文件",
+    key: "uploadFile",
+  },
+
   {
-    label:"更多",
-    key:"more",
-    children:[
+    label: "更多",
+    key: "more",
+    children: [
       {
         label: "复制",
         key: "copy",
@@ -77,31 +83,40 @@ const options = [
         key: "move",
       },
       {
-        label:"下载",
-        key:"download"
-       },
-       {
-        label:"分享",
-        key:"share"
-      }
-    ]
-  }
+        label: "下载",
+        key: "download",
+      },
+      {
+        label: "分享",
+        key: "share",
+      },
+    ],
+  },
 ];
-const currentDetail = ref(null);
 const type = ref("file"); // 用于区分是新建文件还是目录
 const store = useKnowledgeBaseStore();
 const showModal = ref(false);
 const props = defineProps({
   node: Object,
 });
-function handleSelect(key, node) {
+const emit = defineEmits(["select"]);
+const children = computed(() => store.getChildren(props.node.id));
+
+const handleChildSelect = (...args) => {
+  emit("select", ...args);
+};
+function handleSelectNode(key, node) {
   console.log("选中了", key, node);
   if (key === "addFolder") {
     type.value = "folder";
     showModal.value = true;
-  } else if (key === "addFile") {
+    emit("select", "addFolder", props.node);
+  } else if (key === "uploadFile") {
     type.value = "file";
     showModal.value = true;
+    emit("select", "uploadFile", props.node);
+  } else if (key === "createFile") {
+    emit("select", "createFile", props.node);
   } else if (key === "delete") {
     // 删除
     remove(node.id);
@@ -111,35 +126,34 @@ function handleSelect(key, node) {
     // if (newTitle) {
     //   store.renameNode(node.id, newTitle);
     // }
+  }
 }
-}
-const children = computed(() => store.getChildren(props.node.id));
 
 // 👉 点击文件夹展开/折叠
-const handleClick = async() => {
+const handleClick = async () => {
   if (props.node.type === "folder") {
     store.toggleFolder(props.node.id);
   }
-    const res = await getKnowledgeDetail(props.node.id)
-      if(res.code === 0) {  
-        currentDetail.value = res.data
-        store.setCurrentId(props.node.id);
-        store.getcurrentDetail(res.data);
-      }else {
-        message.error("获取资料详情失败");
-      }
+  const res = await getKnowledgeDetail(props.node.id);
+  if (res.code === 0) {
+    store.setCurrentId(props.node.id);
+    store.getcurrentDetail(res.data);
+    emit("select", "preview", props.node);
+  } else {
+    message.error("获取资料详情失败");
+  }
 };
 const handleKnowledgeBaseModal = (type) => {
   showModal.value = true;
 };
-const remove = async(nodeId) => {
-    const stutas = await deleteKnowledge(nodeId);
-    if(stutas.code === 0) {
-      message.success(stutas.message);
-      store.deleteNode(nodeId);
-    }else{
-      message.error("删除失败");
-    }
+const remove = async (nodeId) => {
+  const stutas = await deleteKnowledge(nodeId);
+  if (stutas.code === 0) {
+    message.success(stutas.message);
+    store.deleteNode(nodeId);
+  } else {
+    message.error("删除失败");
+  }
 };
 </script>
 

@@ -9,10 +9,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vicons/ionicons5": "^0.13.0",
+    "docx": "^9.6.1",
+    "file-saver": "^2.0.5",
     "github-markdown-css": "^5.9.0",
     "highlight.js": "^11.11.1",
+    "html2pdf.js": "^0.14.0",
     "markdown-it": "^14.1.1",
     "marked": "^17.0.4",
+    "md-editor-v3": "^6.5.0",
     "naive-ui": "^2.44.1",
     "pinia": "^3.0.4",
     "uuid": "^13.0.0",

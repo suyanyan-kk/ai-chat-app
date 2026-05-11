@@ -76,6 +76,7 @@ export const useKnowledgeBaseStore = defineStore("knowledgeBase", {
       this.list.push(obj)
     },
     getcurrentDetail(data) {
+      console.log("详情:", data)
       this.currentDetail = data
     },
     setCurrentId(id) {
