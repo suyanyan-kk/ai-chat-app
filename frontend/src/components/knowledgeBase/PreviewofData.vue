@@ -6,24 +6,22 @@
       </h2>
 
       <p>{{ currentDetail?.file?.description || "暂无描述" }}</p>
+      <n-tag type="warning" v-if="currentDetail?.file?.embedding_status === 'pending'"> 等待向量化 </n-tag>
+
+      <n-tag type="info" v-if="currentDetail?.file?.embedding_status === 'processing'"> 正在分析 </n-tag>
+
+      <n-tag type="success" v-if="currentDetail?.file?.embedding_status === 'success'"> AI已就绪 </n-tag>
+
+      <n-tag type="error" v-if="currentDetail?.file?.embedding_status === 'failed'"> 向量化失败 </n-tag>
     </div>
 
-   
     <div class="preview-body">
       <!-- markdown 内容 -->
       <div class="markdown-body" v-html="htmlContent" />
-           <!-- 图片 -->
-    <img
-      v-if="isImage"
-      :src="currentDetail?.file?.url"
-      class="image"
-    />
-    <!-- pdf -->
-    <iframe
-      v-else-if="isPdf"
-      :src="currentDetail?.file?.url"
-      class="pdf"
-    />
+      <!-- 图片 -->
+      <img v-if="isImage" :src="currentDetail?.file?.url" class="image" />
+      <!-- pdf -->
+      <iframe v-else-if="isPdf" :src="currentDetail?.file?.url" class="pdf" />
     </div>
   </div>
 </template>
@@ -52,12 +50,12 @@ const htmlContent = computed(() => {
   return md.render(currentDetail.value?.file?.content || "");
 });
 const isImage = computed(() => {
-  return /\.(png|jpg|jpeg|gif)$/i.test(currentDetail.value?.file?.original_name)
-})
+  return /\.(png|jpg|jpeg|gif)$/i.test(currentDetail.value?.file?.original_name);
+});
 
 const isPdf = computed(() => {
-  return /\.pdf$/i.test(currentDetail.value?.file?.original_name)
-})
+  return /\.pdf$/i.test(currentDetail.value?.file?.original_name);
+});
 </script>
 
 <style scoped>

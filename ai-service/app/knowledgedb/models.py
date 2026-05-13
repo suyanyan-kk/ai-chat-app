@@ -1,7 +1,7 @@
 # models.py
 # 定义知识库的 数据模型/数据库结构
 # Created by Suyanyan on 2024/6/20.
-from sqlalchemy import Column, Integer, String, Text,Boolean
+from sqlalchemy import Column, Integer, String, Text,Boolean,ForeignKey
 from app.knowledgedb.db import Base 
 
 class Knowledge(Base):
@@ -26,3 +26,28 @@ class KnowledgeFile(Base):
     file_size = Column(Integer)
     file_type = Column(String)
     content = Column(Text) # 存储文件内容，方便后续查询和使用
+    # 默认值为 "pending"（等待向量化）processing 正在向量化 success	已完成 failed	失败
+    embedding_status = Column(String,default="pending")
+
+class KnowledgeChunk(Base):
+    __tablename__ = "knowledge_chunk"
+    id = Column(Integer,
+        primary_key=True,#主键
+        index=True #这个表会有很多条记录，建立索引可以提高查询效率
+    )
+    # 关联文件属于哪个文件
+    file_id = Column(
+        Integer,
+        ForeignKey("knowledge_file.id") #外键这个字段引用另外一张表的id字段，表示这个chunk属于哪个文件
+    )
+    # chunk 顺序第几个 chunk 以后需要上下文拼接
+    chunk_index = Column(Integer,default=0)
+
+    # chunk 内容
+    content = Column(Text)
+
+    # 向量状态
+    embedding_status = Column(String,default="pending")
+
+    # 向量ID（以后给向量库用）Chroma 里的 vector uuid。
+    vector_id = Column(String,nullable=True)
