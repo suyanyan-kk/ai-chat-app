@@ -1,15 +1,24 @@
-from utils.splitters.base_splitter import split_text
+from app.utils.splitters.base_splitter import split_text
+from app.utils.splitters.code_splitter import split_code
+from app.utils.splitters.markdown_splitter import split_markdown
 
-from utils.splitters.markdown_splitter import (
-    split_markdown
-)
+# 根据文件类型自动选择切片器
+def split_by_file_type(filename: str, content: str):
 
+    ext = filename.split(".")[-1].lower()
+    
+    print(f"文件类型: {ext}")   
+    # markdown
+    if ext in ["md", "markdown"]:
+        return split_markdown(content)
 
-def get_splitter(file_name):
+    # code
+    elif ext in ["py", "js", "ts", "vue", "java"]:
+        return split_code(content, ext)
 
-    ext = file_name.split(".")[-1].lower()
+    # 普通文本
+    elif ext in ["txt"]:
+        return split_text(content)
 
-    if ext == "md":
-        return split_markdown
-
-    return split_text
+    # 默认
+    return split_text(content)

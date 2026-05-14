@@ -1,22 +1,30 @@
 from app.knowledgedb import models, schemas
-from app.utils.chunk import split_text
+# from app.utils.chunk import split_text
+from app.utils.splitters.splitter_factory import split_by_file_type
+import json
 
-def create_chunks(
-    db,
-    file_id,
-    text
-):
+def create_chunks(db,file_id,uuid_name,text):
 
-    chunks = split_text(text)
+    chunks = split_by_file_type(
+            uuid_name,
+            text
+            )
+    print("\n========== chunk result ==========\n")
 
     chunk_items = []
-
-    for index, chunk_text in enumerate(chunks):
-
+# enumerate 函数可以同时获取列表的索引和内容，这里我们需要知道每个 chunk 的顺序，所以使用 enumerate 来获取 chunk_index和 chunk_text
+    for index, chunk in enumerate(chunks):
+        content = chunk["content"]
+        meta_info = chunk["meta_info"]
+        print(f"\n--- chunk {index} ---")
+        print(content)
+        print("长度:", len(content))
+        print("meta_info:", meta_info)
         chunk_item = models.KnowledgeChunk(
             file_id=file_id,
             chunk_index=index,
-            content=chunk_text,
+            content=content,
+            meta_info=json.dumps(meta_info),
             embedding_status="pending"
         )
 

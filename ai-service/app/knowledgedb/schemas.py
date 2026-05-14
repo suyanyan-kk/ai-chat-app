@@ -16,7 +16,33 @@ class KnowledgeCreate(BaseModel):
 
 class KnowledgeOut(KnowledgeCreate):
     id: int
-
     class Config:
         # from_attributes=True 表示自动把 ORM （类） 对象转成 JSON
         from_attributes = True 
+
+class KnowledgeFileOut(BaseModel):
+    id: int
+    original_name: str
+    uuid_name: str
+    file_url: str
+    file_size: int
+    file_type: str
+    content: str
+    embedding_status: str
+    class Config:
+        from_attributes = True
+
+class UploadResponse(BaseModel):
+    code: int
+    message: str
+    data: KnowledgeFileOut
+    class Config:
+        from_attributes = True
+
+
+class ApiResponse(BaseModel):
+    code: int
+    message: str
+
+# class UploadResponse(ApiResponse):
+#     data: KnowledgeFileOut

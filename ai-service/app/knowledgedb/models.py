@@ -29,6 +29,7 @@ class KnowledgeFile(Base):
     # 默认值为 "pending"（等待向量化）processing 正在向量化 success	已完成 failed	失败
     embedding_status = Column(String,default="pending")
 
+
 class KnowledgeChunk(Base):
     __tablename__ = "knowledge_chunk"
     id = Column(Integer,
@@ -46,6 +47,7 @@ class KnowledgeChunk(Base):
     # chunk 内容
     content = Column(Text)
 
+    meta_info = Column(Text, nullable=True)
     # 向量状态
     embedding_status = Column(String,default="pending")
 

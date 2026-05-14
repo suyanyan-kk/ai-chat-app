@@ -74,7 +74,7 @@ def delete_knowledge(id: int, db: Session = Depends(get_db)):
         "code": 0,
         "message": "删除成功",
     }
-@router.post("/uploadKnowledgeFile")
+@router.post("/uploadKnowledgeFile",response_model=schemas.UploadResponse)
 async def upload_file(
     file: UploadFile = File(...),
     db: Session = Depends(get_db)

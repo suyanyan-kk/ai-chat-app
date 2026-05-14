@@ -5,7 +5,7 @@
         {{ currentDetail?.title || "资料预览" }}
       </h2>
 
-      <p>{{ currentDetail?.file?.description || "暂无描述" }}</p>
+      <p>{{ currentDetail?.description || "暂无描述" }}</p>
       <n-tag type="warning" v-if="currentDetail?.file?.embedding_status === 'pending'"> 等待向量化 </n-tag>
 
       <n-tag type="info" v-if="currentDetail?.file?.embedding_status === 'processing'"> 正在分析 </n-tag>

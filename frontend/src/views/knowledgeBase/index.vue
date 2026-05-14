@@ -31,12 +31,15 @@ import { ref, computed, onMounted } from "vue";
 import KbTree from "@/components/knowledgeBase/KbTree.vue";
 import PreviewofData from "@/components/knowledgeBase/PreviewofData.vue";
 import EditorWrapper from "@/components/knowledgeBase/EditorWrapper.vue";
+import ViewEmpty from "@/components/knowledgeBase/ViewEmpty.vue";
+
 import { useKnowledgeBaseStore } from "@/stores/modules/knowledgeBase";
 import { storeToRefs } from "pinia";
 import { getKnowledge } from "@/api/modules/knowledge.js";
 import CreateFileModal from "@/components/knowledgeBase/CreateFileModal.vue";
+
 // 当前视图：预览、编辑等addFile
-const currentView = ref("preview");
+const currentView = ref("empty");
 const loading = ref(false);
 const kbStore = useKnowledgeBaseStore();
 const keyword = ref("");
@@ -46,10 +49,11 @@ const list = buildTree;
 const componentMap = {
   preview: PreviewofData,
   createFile: EditorWrapper,
+  empty: ViewEmpty,
 };
 
 const currentComponent = computed(() => {
-  return componentMap[currentView.value] || PreviewofData;
+  return componentMap[currentView.value] || empty;
 });
 
 const currentComponentProps = computed(() => {
@@ -119,6 +123,7 @@ onMounted(async () => {
   box-sizing: border-box;
 }
 .kb-box {
+  height: 100%;
   display: flex;
   gap: 20px;
   padding: 20px;
