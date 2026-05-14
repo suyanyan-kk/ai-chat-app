@@ -56,7 +56,6 @@
       <!-- footer -->
       <div class="footer">
         <n-button ghost @click="close" color="#fff"> 取消 </n-button>
-
         <n-button type="primary" @click="handleSubmit"> 创建文件 </n-button>
       </div>
     </div>
@@ -64,18 +63,17 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed,reactive } from "vue";
 import message from "@/utils/message";
 
 const props = defineProps({
   show: Boolean,
 });
 
-const emit = defineEmits(["update:show", "submit"]);
+const emit = defineEmits(["update:show", "createSubmit"]);
 
 const visible = computed({
   get: () => props.show,
-
   set: (val) => emit("update:show", val),
 });
 
@@ -106,39 +104,37 @@ const fileTypes = [
   },
 ];
 // 表单
-const createForm = ref({
+const createForm = reactive({
   title: "",
-
   description: "",
-
   file_type: "md",
 });
 
 // 选择类型
 const selectType = (item) => {
-  createForm.value.file_type = item.value;
+  createForm.file_type = item.value;
 };
 
 // 关闭
 const close = () => {
   emit("update:show", false);
-
-  createForm.value = {
-    title: "",
-    description: "",
-    file_type: "md",
-  };
+  createForm.title = "";
+  createForm.description = "";
+  createForm.file_type = "md";
 };
 
 // 提交
 const handleSubmit = () => {
-  if (!createForm.value.title) {
+  if (!createForm.title) {
     message.warning("请输入文件名称");
     return;
   }
+  if (!createForm.file_type) {
+    message.warning("请选择文件类型");
+    return;
+  }
 
-  emit("submit", { ...createForm.value });
-
+  emit("createSubmit", { ...createForm });
   close();
 };
 </script>

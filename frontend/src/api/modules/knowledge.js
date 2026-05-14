@@ -19,8 +19,10 @@ export const deleteKnowledge = (id) => {
 // 上传文件
 export const uploadFile = (file) => {
   const formData = new FormData()
-
   formData.append("file", file)
-
   return post("/uploadKnowledgeFile", formData)
+}
+// chunk preview
+export const getChunks = (fileId) => {
+  return get(`/chunks/${fileId}`)
 }

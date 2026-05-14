@@ -15,13 +15,13 @@ recursive_splitter = RecursiveCharacterTextSplitter(
     chunk_size=300,
     chunk_overlap=50
 )
-def split_markdown(text: str) -> list[ChunkData]:
+def split_markdown(file_id: int, filename: str, text: str) -> list[ChunkData]:
 
     md_docs = markdown_splitter.split_text(text)
     final_chunks = []
     print("chunk数量:", len(md_docs))
-    for i, doc in enumerate(md_docs):
-        print(f"\n===== chunk {i} =====")
+    for doc_index, doc in enumerate(md_docs):
+        print(f"\n===== chunk {doc_index} =====")
         print("meta_info:", doc.metadata)
         print("content:", doc.page_content)
         small_chunks = recursive_splitter.split_text(
@@ -29,15 +29,26 @@ def split_markdown(text: str) -> list[ChunkData]:
         )
         print(f"\n===== small_chunks=====")
 
-        for j, chunk in enumerate(small_chunks):
+        for chunk_index, chunk in enumerate(small_chunks):
 
-            print(f"Small chunk {j}:", chunk)
-            
+            print(f"Small chunk {chunk_index}:", chunk)
             final_chunks.append({
-                  "content": chunk,
-                  "meta_info": {
-                    "splitter": "markdown",
-                    "headers": doc.metadata
-                    }
-                 })
+                "file_id": file_id,
+                "filename": filename,
+                "content": chunk,
+                "meta_info": {
+                    "source": filename,
+                    "file_type": "md",
+                    "section": (
+                        doc.metadata.get("Header 3")
+                        or doc.metadata.get("Header 2")
+                        or doc.metadata.get("Header 1")
+                        or "unknown"
+                    ),
+                    "doc_index": doc_index,
+                    "chunk_index": chunk_index,
+                    "headers": doc.metadata,
+                    "splitter": "markdown"
+                }
+            })
     return final_chunks

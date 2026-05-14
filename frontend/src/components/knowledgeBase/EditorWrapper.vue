@@ -84,8 +84,9 @@ const props = defineProps({
     default: () => ({
       title: "未命名.md",
       description: "",
-      parent_id: null,
+      file_type: "",
       type: "file",
+      parent_id: null,
     }),
   },
 });

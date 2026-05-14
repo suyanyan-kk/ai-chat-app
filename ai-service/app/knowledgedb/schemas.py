@@ -2,8 +2,7 @@
 # Pydantic BaseModel = 用来定义“接口数据格式（入参/出参）”
 from pydantic import BaseModel
 # Optional 表示“可以为空”
-from typing import Optional
-
+from typing import Optional,Any
 class KnowledgeCreate(BaseModel):
     title: str
     parent_id: Optional[int] = None
@@ -39,7 +38,15 @@ class UploadResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class ChunkOut(BaseModel):
 
+    id: int
+    chunk_index: int
+    content: str
+    meta_info: Any
+    embedding_status: str
+    class Config:
+        from_attributes = True
 class ApiResponse(BaseModel):
     code: int
     message: str

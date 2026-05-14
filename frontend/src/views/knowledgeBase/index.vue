@@ -22,7 +22,7 @@
     <div class="box-view">
       <component :is="currentComponent" v-bind="currentComponentProps" />
     </div>
-    <CreateFileModal v-model:show="showCreateFile" @submit="handleCreateFile" />
+    <CreateFileModal v-model:show="showCreateFile" @createSubmit="handleCreateFile" />
   </div>
 </template>
 
@@ -37,6 +37,7 @@ import { useKnowledgeBaseStore } from "@/stores/modules/knowledgeBase";
 import { storeToRefs } from "pinia";
 import { getKnowledge } from "@/api/modules/knowledge.js";
 import CreateFileModal from "@/components/knowledgeBase/CreateFileModal.vue";
+import ChunkPreview from "@/components/knowledgeBase/ChunkPreview.vue";
 
 // 当前视图：预览、编辑等addFile
 const currentView = ref("empty");
@@ -49,11 +50,12 @@ const list = buildTree;
 const componentMap = {
   preview: PreviewofData,
   createFile: EditorWrapper,
+  chunkPreview: ChunkPreview,
   empty: ViewEmpty,
 };
 
 const currentComponent = computed(() => {
-  return componentMap[currentView.value] || empty;
+  return componentMap[currentView.value] || ViewEmpty;
 });
 
 const currentComponentProps = computed(() => {
@@ -73,6 +75,9 @@ const handleSelect = (operationType, node) => {
     showCreateFile.value = true;
     createFileData.value.parent_id = node.id;
     createFileData.value.type = "file";
+  } else if (operationType === "chunkFile") {
+    // 处理文件切片逻辑
+    currentView.value = "chunkPreview";
   } else {
     currentView.value = "preview";
   }
@@ -87,7 +92,8 @@ const createFileData = ref({
   type: "",
   parent_id: null,
 });
-const handleCreateFile = async (data) => {
+const handleCreateFile = (data) => {
+  debugger
   createFileData.value.title = data.title;
   createFileData.value.description = data.description;
   createFileData.value.file_type = data.file_type;

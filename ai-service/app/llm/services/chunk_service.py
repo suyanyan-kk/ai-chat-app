@@ -3,10 +3,12 @@ from app.knowledgedb import models, schemas
 from app.utils.splitters.splitter_factory import split_by_file_type
 import json
 
-def create_chunks(db,file_id,uuid_name,text):
+def create_chunks(db,file_id,uuid_name,file_path,text):
 
     chunks = split_by_file_type(
+            file_id,
             uuid_name,
+            file_path,
             text
             )
     print("\n========== chunk result ==========\n")
@@ -16,6 +18,7 @@ def create_chunks(db,file_id,uuid_name,text):
     for index, chunk in enumerate(chunks):
         content = chunk["content"]
         meta_info = chunk["meta_info"]
+        meta_info["chunk_index"] = index  # 添加 chunk_index 到 meta_info 中，方便后续查询和调试
         print(f"\n--- chunk {index} ---")
         print(content)
         print("长度:", len(content))
@@ -24,7 +27,10 @@ def create_chunks(db,file_id,uuid_name,text):
             file_id=file_id,
             chunk_index=index,
             content=content,
-            meta_info=json.dumps(meta_info),
+            meta_info=json.dumps(
+                meta_info,
+                ensure_ascii=False
+                ),
             embedding_status="pending"
         )
 

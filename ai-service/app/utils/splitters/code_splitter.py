@@ -13,8 +13,9 @@ LANGUAGE_MAP = {
 }
 
 
-def split_code(content: str, ext: str) -> list[ChunkData]:
+def split_code(file_id: int, filename: str, content: str) -> list[ChunkData]:
 
+    ext = filename.split(".")[-1].lower()
     language = LANGUAGE_MAP.get(ext)
 
     # 普通文本切割
@@ -29,13 +30,18 @@ def split_code(content: str, ext: str) -> list[ChunkData]:
 
         return [
             {
+                "file_id": file_id,
+                "filename": filename,
                 "content": chunk,
-                "meta_info": {
+                "meta_info":{
+                    "source": filename,
                     "file_type": ext,
-                    "splitter": "recursive"
+                    "splitter": "recursive",
+                    "section": "code",
+                    "chunk_index": index,
                 }
             }
-            for chunk in chunks
+              for index, chunk in enumerate(chunks)
         ]
 
     # 代码语言切割
@@ -49,12 +55,16 @@ def split_code(content: str, ext: str) -> list[ChunkData]:
 
     return [
         {
+            "file_id": file_id,
+            "filename": filename,
             "content": chunk,
             "meta_info": {
+                "source": filename,
                 "file_type": ext,
                 "language": language.name,
-                "splitter": "language"
+                "splitter": "language",
+                "chunk_index": index
             }
         }
-        for chunk in chunks
+        for index, chunk in enumerate(chunks)
     ]

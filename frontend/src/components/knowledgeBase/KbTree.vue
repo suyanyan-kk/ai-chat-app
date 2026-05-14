@@ -5,7 +5,7 @@
       <span> {{ node.type === "file" ? "📄" : "📁" }} {{ node.title }} </span>
       <div class="more-wrapper">
         <n-dropdown
-          trigger="hover"
+          trigger="click"
           placement="bottom-start"
           :options="options"
           @select="handleSelectNode($event, node)"
@@ -50,6 +50,10 @@ const options = [
       {
         label: "创建文件",
         key: "createFile",
+      },
+      {
+        label: "查看切片",
+        key: "chunkFile",
       },
     ],
   },
@@ -117,6 +121,9 @@ function handleSelectNode(key, node) {
     emit("select", "uploadFile", props.node);
   } else if (key === "createFile") {
     emit("select", "createFile", props.node);
+  } else if (key === "chunkFile") {
+    // 文件切片
+    emit("select", "chunkFile", props.node);
   } else if (key === "delete") {
     // 删除
     remove(node.id);

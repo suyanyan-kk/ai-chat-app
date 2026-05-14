@@ -1,5 +1,6 @@
 from fastapi import APIRouter,Depends,status,File,UploadFile
 from uuid import uuid4
+import json
 from sqlalchemy.orm import Session
 from app.knowledgedb import models, schemas
 from app.knowledgedb.db import SessionLocal, engine
@@ -140,4 +141,33 @@ def get_knowledge_detail(
         "code": 0,
         "message": "获取成功",
         "data": result
+    }
+
+@router.get("/chunks/{file_id}")
+def get_chunks(
+    file_id: int,
+    db: Session = Depends(get_db)
+):
+    chunks = db.query(models.KnowledgeChunk).filter(
+        models.KnowledgeChunk.file_id == file_id
+    ).order_by(
+        models.KnowledgeChunk.chunk_index
+    ).all()
+
+    return {
+        "code": 0,
+        "message": "success",
+        "data": [
+            {
+                "id": chunk.id,
+                "file_id": chunk.file_id,
+                "chunk_index": chunk.chunk_index,
+                "content": chunk.content,
+                "meta_info": json.loads(
+                    chunk.meta_info or "{}"
+                ),
+                "embedding_status": chunk.embedding_status
+            }
+            for chunk in chunks
+        ]
     }

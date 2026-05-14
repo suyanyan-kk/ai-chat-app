@@ -51,6 +51,7 @@ async def save_upload_file(file, db):
         db=db,
         file_id=file_item.id,
         uuid_name=uuid_name,
+        file_path=file_path,
         text=text_content
     )
 
@@ -59,7 +60,8 @@ async def save_upload_file(file, db):
 def parse_text_content(content):
 
     try:
-        return content.decode("utf-8")
+        return content.decode("utf-8") 
+        # 只能解析：txt md json csv
 
     except Exception:
         return "暂不支持该文件解析"
