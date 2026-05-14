@@ -2,6 +2,7 @@ import os
 from uuid import uuid4
 from app.knowledgedb import models, schemas
 from app.llm.services.chunk_service import create_chunks
+from app.utils.parsers.parser_factory import parse_by_file_type
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 
@@ -29,8 +30,8 @@ async def save_upload_file(file, db):
         f.write(content)
 
     # 提取文本
-    text_content = parse_text_content(content)
-    
+    text_content = parse_by_file_type(file_path, ext)
+
     # 创建文件记录
     file_item = models.KnowledgeFile(
         original_name=file.filename,
@@ -57,11 +58,11 @@ async def save_upload_file(file, db):
 
     return file_item
 
-def parse_text_content(content):
+# def parse_text_content(content):
 
-    try:
-        return content.decode("utf-8") 
-        # 只能解析：txt md json csv
+#     try:
+#         return content.decode("utf-8") 
+#         # 只能解析：txt md json csv
 
-    except Exception:
-        return "暂不支持该文件解析"
+#     except Exception:
+#         return "暂不支持该文件解析"
