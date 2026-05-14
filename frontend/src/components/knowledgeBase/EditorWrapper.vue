@@ -11,45 +11,85 @@
       </div>
 
       <div class="right">
-        <!-- 图标按钮 -->
         <div class="action-buttons">
-          <!-- 分享 -->
-          <n-button circle secondary type="primary">
-            <template #icon>
-              <n-icon>
-                <ShareSocialOutline />
-              </n-icon>
+          <!-- 保存 -->
+          <n-tooltip trigger="hover">
+            <template #trigger>
+              <n-button circle secondary type="success" @click="handleSave">
+                <template #icon>
+                  <n-icon>
+                    <SaveOutline />
+                  </n-icon>
+                </template>
+              </n-button>
             </template>
-          </n-button>
 
-          <!-- 查找 -->
-          <n-button circle secondary type="info">
-            <template #icon>
-              <n-icon>
-                <SearchOutline />
-              </n-icon>
+            保存文件
+          </n-tooltip>
+
+          <!-- 清空 -->
+          <n-tooltip trigger="hover">
+            <template #trigger>
+              <n-button circle secondary type="warning" @click="handleClear">
+                <template #icon>
+                  <n-icon>
+                    <TrashOutline />
+                  </n-icon>
+                </template>
+              </n-button>
             </template>
-          </n-button>
+
+            清空内容
+          </n-tooltip>
+
+          <!-- 导出 PDF -->
+          <n-tooltip trigger="hover">
+            <template #trigger>
+              <n-button circle secondary type="error" @click="exportPdf">
+                <template #icon>
+                  <n-icon>
+                    <ReceiptOutline />
+                  </n-icon>
+                </template>
+              </n-button>
+            </template>
+
+            导出 PDF
+          </n-tooltip>
+
+          <!-- 导出 Word -->
+          <n-tooltip trigger="hover">
+            <template #trigger>
+              <n-button circle secondary type="info" @click="exportWord">
+                <template #icon>
+                  <n-icon>
+                    <DocumentTextOutline />
+                  </n-icon>
+                </template>
+              </n-button>
+            </template>
+
+            导出 Word
+          </n-tooltip>
 
           <!-- 更多 -->
-          <n-dropdown @select="handleSelectMore($event, node)" :options="options" trigger="click" >
-            <n-button circle secondary>
-              <template #icon>
-                <n-icon>
-                  <EllipsisHorizontal />
-                </n-icon>
-              </template>
-            </n-button>
-          </n-dropdown>
+          <n-tooltip trigger="hover">
+            <template #trigger>
+              <n-dropdown @select="handleSelectMore" :options="options" trigger="click">
+                <n-button circle secondary  type="info">
+                  <template #icon>
+                    <n-icon>
+                      <EllipsisHorizontal />
+                    </n-icon>
+                  </template>
+                </n-button>
+              </n-dropdown>
+            </template>
+
+            更多操作
+          </n-tooltip>
         </div>
       </div>
-    </div>
-    <!-- 操作按钮 -->
-    <div class="editorBtn">
-      <n-button ghost style="margin-right: 10px" @click="handleClear" color="#fff">
-        清空
-      </n-button>
-      <n-button type="primary" @click="handleSave"> 保存 Markdown </n-button>
     </div>
 
     <!-- 编辑器 -->
@@ -72,10 +112,18 @@ import "md-editor-v3/lib/style.css";
 import { useKnowledgeBaseStore } from "@/stores/modules/knowledgeBase";
 import { addKnowledge, uploadFile } from "@/api/modules/knowledge";
 import message from "@/utils/message";
-import "md-editor-v3/lib/style.css"
-import html2pdf from "html2pdf.js"
-import { saveAs } from "file-saver"
-import { ShareSocialOutline, SearchOutline, EllipsisHorizontal } from "@vicons/ionicons5";
+import { Document, Packer, Paragraph } from "docx";
+import jsPDF from "jspdf";
+import { saveAs } from "file-saver";
+import {
+  ShareSocialOutline,
+  SearchOutline,
+  EllipsisHorizontal,
+  SaveOutline,
+  TrashOutline,
+  DocumentTextOutline,
+  ReceiptOutline,
+} from "@vicons/ionicons5";
 const store = useKnowledgeBaseStore();
 
 const props = defineProps({
@@ -92,20 +140,23 @@ const props = defineProps({
 });
 const options = [
   {
-    label: "导出pdf",
-    key: "export-pdf",
+    label: "分享",
+    key: "share",
   },
   {
-    label: "导出word",
-    key: "export-word",
+    label: "搜索",
+    key: "search",
   },
 ];
-function handleSelectMore(key, node) {
-  console.log("选中的导出", key, node);
-  if (key === "export-pdf") {
-    exportWord();
-  } else if (key === "export-word") {
-    exportPdf();
+function handleSelectMore(key) {
+  console.log("选中的操作", key);
+
+  if (key === "share") {
+    message.info("分享功能开发中");
+  }
+
+  if (key === "search") {
+    message.info("搜索功能开发中");
   }
 }
 /**
@@ -115,26 +166,29 @@ const exportWord = async () => {
   const doc = new Document({
     sections: [
       {
-        children: [
-          new Paragraph(content.value)
-        ]
-      }
-    ]
-  })
+        children: [new Paragraph(content.value)],
+      },
+    ],
+  });
 
-  const blob = await Packer.toBlob(doc)
+  const blob = await Packer.toBlob(doc);
 
-  saveAs(blob, `${props.file.title}.docx`)
-}
+  saveAs(blob, `${props.createFileData.title}.docx`);
+};
 
 /**
  * 导出pdf
  */
 const exportPdf = () => {
-  const element = document.querySelector(".md-editor-preview")
+  // const element = document.querySelector(".md-editor-preview")
 
-  html2pdf().from(element).save()
-}
+  // html2pdf().from(element).save()
+  const pdf = new jsPDF();
+
+  pdf.text(content.value, 10, 10);
+
+  pdf.save(`${props.createFileData.title}.pdf`);
+};
 // markdown 内容
 const content = ref(`
 # 欢迎使用 AI Markdown 编辑器
@@ -331,9 +385,21 @@ const submitData = async (fileId) => {
 
   gap: 12px;
 }
-.editorBtn {
+.action-buttons {
   display: flex;
-  margin: 10px;
+  align-items: center;
+  gap: 10px;
+}
+:deep(.n-tooltip) {
+  border-radius: 10px;
+}
+.action-buttons :deep(.n-button) {
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.action-buttons :deep(.n-button:hover) {
+  transform: translateY(-2px);
 }
 /* 编辑器区域 */
 
