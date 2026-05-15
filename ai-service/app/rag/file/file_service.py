@@ -1,7 +1,7 @@
 import os
 from uuid import uuid4
 from app.knowledgedb import models, schemas
-from app.llm.services.chunk_service import create_chunks
+from app.rag.chunk.chunk_service import create_chunks
 from app.utils.parsers.parser_factory import parse_by_file_type
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
@@ -53,7 +53,7 @@ async def save_upload_file(file, db):
         file_id=file_item.id,
         uuid_name=uuid_name,
         file_path=file_path,
-        text=text_content
+        text=text_content 
     )
 
     return file_item

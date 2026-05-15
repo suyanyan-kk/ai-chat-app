@@ -6,6 +6,9 @@ from app.utils.message import create_message
 from ..model import model
 from app.core.logger import logger
 from app.core.exception import AppException
+from app.rag.retrieval.retrieval_service import (
+    build_context
+)
 def stream_chat(session_id: str, user_input: str):
     logger.info(f"[聊天请求] session={session_id}, message={user_input}")
     if not user_input:
@@ -13,10 +16,13 @@ def stream_chat(session_id: str, user_input: str):
     try:
         memory = get_memory(session_id)
         history = memory.load_memory_variables({})["history"]
+        # RAG 检索
+        context = build_context(user_input)
 
         messages = chat_prompt.invoke({
             "input": user_input,
-            "history": history
+            "history": history,
+            "context": context
          })
 
         full_response = ""

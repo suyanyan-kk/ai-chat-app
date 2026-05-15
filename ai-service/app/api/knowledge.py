@@ -4,7 +4,7 @@ import json
 from sqlalchemy.orm import Session
 from app.knowledgedb import models, schemas
 from app.knowledgedb.db import SessionLocal, engine
-from app.llm.services.file_service import save_upload_file
+from app.rag.file.file_service import save_upload_file
 
 # 创建表（自动）如果表不存在 → 自动创建
 models.Base.metadata.create_all(bind=engine)

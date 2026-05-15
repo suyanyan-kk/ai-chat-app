@@ -93,7 +93,7 @@ const createFileData = ref({
   parent_id: null,
 });
 const handleCreateFile = (data) => {
-  debugger
+  // debugger
   createFileData.value.title = data.title;
   createFileData.value.description = data.description;
   createFileData.value.file_type = data.file_type;

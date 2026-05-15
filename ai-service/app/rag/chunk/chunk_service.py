@@ -2,7 +2,9 @@ from app.knowledgedb import models, schemas
 # from app.utils.chunk import split_text
 from app.utils.splitters.splitter_factory import split_by_file_type
 import json
-
+from app.rag.vectorstore.chroma_service import (
+    save_chunks_to_chroma
+)
 def create_chunks(db,file_id,uuid_name,file_path,text):
 
     chunks = split_by_file_type(
@@ -37,5 +39,7 @@ def create_chunks(db,file_id,uuid_name,file_path,text):
         chunk_items.append(chunk_item)
 
     db.add_all(chunk_items) #最后一次性添加所有 chunk_item，减少数据库交互次数，提高效率
-
     db.commit()
+    for item in chunk_items:
+        db.refresh(item)
+    save_chunks_to_chroma(chunk_items) 
