@@ -8,7 +8,7 @@ from app.knowledgedb.db import SessionLocal, engine
 from app.rag.file.file_service import save_upload_file
 from app.rag.vectorstore.chroma_service import vector_store
 
-# 创建表（自动）如果表不存在 → 自动创建
+# 创建表（自动）如果表不存在 → 自动创建 
 models.Base.metadata.create_all(bind=engine)
 router = APIRouter()
 

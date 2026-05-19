@@ -27,7 +27,7 @@ vector_store = Chroma(
     persist_directory="./chroma_db",
 
     # embedding 模型
-    embedding_function=embedding_model 
+    embedding_function=embedding_model,
 )
 
 

@@ -4,6 +4,18 @@ __pycache__/
 .venv/
 .env
 
+# SQLite
+*.db
+
+# macOS
+.DS_Store
+
+# uploads
+uploads/
+
+# chroma
+chroma/
+
 # Node
 node_modules/
 dist/
