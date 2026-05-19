@@ -2,6 +2,7 @@ from app.knowledgedb import models, schemas
 # from app.utils.chunk import split_text
 from app.utils.splitters.splitter_factory import split_by_file_type
 import json
+import uuid
 from app.rag.vectorstore.chroma_service import (
     save_chunks_to_chroma
 )
@@ -33,7 +34,8 @@ def create_chunks(db,file_id,uuid_name,file_path,text):
                 meta_info,
                 ensure_ascii=False
                 ),
-            embedding_status="pending"
+            embedding_status="pending",
+            vector_id=str(uuid.uuid4())
         )
 
         chunk_items.append(chunk_item)

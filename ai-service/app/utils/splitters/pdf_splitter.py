@@ -8,8 +8,8 @@ from app.utils.splitters.types import ChunkDataPDF
 
 
 recursive_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=500,
-    chunk_overlap=80,
+    chunk_size=300,
+    chunk_overlap=50,
     separators=[
         "\n\n",
         "\n",

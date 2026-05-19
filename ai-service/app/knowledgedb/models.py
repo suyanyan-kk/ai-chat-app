@@ -3,7 +3,6 @@
 # Created by Suyanyan on 2024/6/20.
 from sqlalchemy import Column, Integer, String, Text,Boolean,ForeignKey
 from app.knowledgedb.db import Base 
-
 class Knowledge(Base):
     __tablename__ = "knowledge_base"
 # primary_key=True主键，index=True索引，String字符串，Text长文本，Integer 数字， nullable=True允许为空

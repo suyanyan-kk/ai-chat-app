@@ -56,12 +56,14 @@ def save_chunks_to_chroma(chunks):
         # metadata
         metadatas.append({
             "file_id": chunk.file_id,
-            "chunk_index": chunk.chunk_index
+            "chunk_index": chunk.chunk_index,
+            "chunk_id": chunk.id,
+            "embedding_status": chunk.embedding_status
         })
 
-        # 向量唯一 id
+        # 向量唯一 id/vector_id，后续更新向量状态和关联 chunk 时会用到
         ids.append(
-            str(chunk.id)
+            str(chunk.vector_id)
         )
 
     # 添加到 chroma
@@ -72,7 +74,19 @@ def save_chunks_to_chroma(chunks):
     )
 
     print("保存到 Chroma 成功")
-    
+#    Chroma 实际存储长这样
+# 你最终其实是：
+# id: vector_id
+#     "0b8e..."
+# text:
+#     "LangChain 是一个..."
+# metadata:
+# {
+#     "file_id": 1,
+#     "chunk_id": 22,
+#     "chunk_index": 3
+#     "embedding_status": "pending"
+# } 
 def show_all_vectors():
 
     result = vector_store.get(
