@@ -1,7 +1,7 @@
 # models.py
 # 定义知识库的 数据模型/数据库结构
 # Created by Suyanyan on 2024/6/20.
-from sqlalchemy import Column, Integer, String, Text,Boolean,ForeignKey
+from sqlalchemy import Column, Integer, String, Text,Boolean,ForeignKey,JSON
 from app.knowledgedb.db import Base 
 class Knowledge(Base):
     __tablename__ = "knowledge_base"
@@ -46,7 +46,7 @@ class KnowledgeChunk(Base):
     # chunk 内容
     content = Column(Text)
 
-    meta_info = Column(Text, nullable=True)
+    meta_info = Column(JSON, nullable=True)
     # 向量状态
     embedding_status = Column(String,default="pending")
 

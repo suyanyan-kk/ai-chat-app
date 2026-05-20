@@ -51,6 +51,7 @@ async def save_upload_file(file, db):
     create_chunks(
         db=db,
         file_id=file_item.id,
+        original_name=file.filename,
         uuid_name=uuid_name,
         file_path=file_path,
         text=text_content 

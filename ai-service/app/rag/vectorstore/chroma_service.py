@@ -31,14 +31,7 @@ vector_store = Chroma(
 )
 
 
-def save_chunks_to_chroma(chunks): 
-
-    """
-    保存 chunk 到 chroma
-
-    参数:
-        chunks: chunk 数据列表
-    """
+def save_chunks_to_chroma(chunks):
 
     texts = []
 
@@ -48,28 +41,35 @@ def save_chunks_to_chroma(chunks):
 
     for chunk in chunks:
 
-        # chunk 文本
+        # 文本
         texts.append(
             chunk.content
         )
 
-        # metadata
-        metadatas.append({
-            "file_id": chunk.file_id,
-            "chunk_index": chunk.chunk_index,
+        # ⭐ 真正的 metadata
+        print("原始 meta_info:", chunk.meta_info)
+        metadata = chunk.meta_info or {}
+
+        # 再补充一些系统字段
+        metadata.update({
             "chunk_id": chunk.id,
             "embedding_status": chunk.embedding_status
         })
 
-        # 向量唯一 id/vector_id，后续更新向量状态和关联 chunk 时会用到
+        metadatas.append(metadata)
+
+        # 向量 id
         ids.append(
             str(chunk.vector_id)
         )
 
-    # 添加到 chroma
+    # 写入 chroma
     vector_store.add_texts(
+
         texts=texts,
+
         metadatas=metadatas,
+
         ids=ids
     )
 

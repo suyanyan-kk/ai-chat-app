@@ -1,14 +1,12 @@
-from typing import TypedDict, Dict, Any
+from dataclasses import dataclass, field
+from typing import Any
 
 
-class ChunkData(TypedDict):
-    file_id: int
-    filename: str
+@dataclass
+class ChunkData:
+
+    # chunk文本
     content: str
-    meta_info: Dict[str, Any]
 
-class ChunkDataPDF(TypedDict):
-    file_id: int
-    filename: str
-    file_path: str
-    meta_info: Dict[str, Any]
+    # metadata
+    metadata: dict[str, Any] = field(default_factory=dict)

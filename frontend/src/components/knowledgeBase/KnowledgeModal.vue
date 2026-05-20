@@ -105,6 +105,8 @@ const handleFileChange = async ({ fileList: files }) => {
     message.success("文件上传成功");
     console.log("文件上传成功，内容已获取", res.data);
   } else {
+    localForm.value.file_id= null;
+    fileList.value = [];
     message.error("文件上传失败");
     console.log("文件上传失败: " + res.message);
   }

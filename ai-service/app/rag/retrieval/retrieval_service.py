@@ -2,6 +2,9 @@ from app.rag.vectorstore.chroma_service import (
     vector_store
 )
 
+# =========================
+# 向量检索
+# =========================
 # 查知识库，获取相关文本
 # k 是返回多少条相关文本
 # Chroma：会：
@@ -18,8 +21,12 @@ def similarity_search(query: str, k: int = 3):
 
     return results
 
+
+# =========================
+# 构建 RAG 数据
+# =========================
 # 构建 RAG context
-def build_context(query: str, k: int = 3):
+def build_rag_context(query: str, k: int = 3):
 
     """
     构建 RAG context
@@ -27,18 +34,68 @@ def build_context(query: str, k: int = 3):
     results = similarity_search(query, k)
     print("\n========== 检索结果 ==========\n")
     context_list = []
-
+    sources = []
+    # 用于去重
+    seen_sources = set()
     for item in results:
         print(item.page_content)
         print(item.metadata)
         print("\n----------------\n")
+        # =========================
+        # context
+        # =========================
         context_list.append(
             item.page_content
         )
-    # 拼 prompt
+        # =========================
+        # sources
+        # =========================
+        metadata = item.metadata
+
+        source_key = (
+                metadata.get("source_id"),
+
+                metadata.get("locator_type"),
+
+                metadata.get("locator_value"),
+        )
+        # 去重
+        if source_key not in seen_sources:
+
+            seen_sources.add(source_key)
+
+            sources.append({
+                "source_id":
+                    metadata.get("source_id"),
+
+                "source_name":
+                    metadata.get("source_name"),
+
+                "source_type":
+                    metadata.get("source_type"),
+
+                "locator_type":
+                    metadata.get("locator_type"),
+
+                "locator_value":
+                    metadata.get("locator_value"),
+
+                # "file_id": metadata.get("file_id"),
+                # "uuid_name": metadata.get("uuid_name"),
+                # "original_name": metadata.get("original_name"),
+                # "file_type": metadata.get("file_type"),
+                # "chunk_index": metadata.get("chunk_index"),
+                # "char_count": metadata.get("char_count"),
+                # "splitter": metadata.get("splitter"),
+                # "extra": metadata.get("extra", {})
+            })
+    # 拼 prompt context
     context = "\n\n".join(context_list)
 
-    return context
+    return {
+        "context": context,
+        "sources": sources
+    }
 
 # if __name__ == "__main__":
 

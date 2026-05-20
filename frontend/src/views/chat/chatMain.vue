@@ -151,6 +151,8 @@ const createAIMessage = () => {
     isUser: false,
     role: "AI",
     loading: true,
+    // ⭐ 来源引用
+    sources: [],
     time: Date.now(),
     id: Date.now() + Math.random(), // ⭐ 唯一ID
     messageIndex: chatStore.getNextMessageIndex() // ⭐ 命中的消息位置
@@ -169,9 +171,20 @@ const handleStream = async (value, aiMessage) => {
       message: value
     },
     (msg) => {
+      // =========================
+      // 流式输出
+      // =========================
       if (msg.type === "stream") {
         queue.push(msg.data)
         typeWriter(aiMessage)
+      }
+      // =========================
+      // 最终结束
+      // =========================
+      if (msg.type === "end") {
+        aiMessage.content = msg.data.answer;
+        aiMessage.sources = msg.data.sources|| [];
+        aiMessage.loading = false
       }
     }
   )
