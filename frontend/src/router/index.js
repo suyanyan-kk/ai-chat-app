@@ -49,6 +49,12 @@ const routes = [
     // ]
   },
   {
+  path: "/chunk-debug",
+  component: () => import("@/views/chunk_debug/index.vue"),
+  name: "chunkDebug",
+  meta: { title: "切块调试" }
+},  
+  {
     path: '/langchain',
     name: 'langchainPractice',
     component: LangchainPractice,

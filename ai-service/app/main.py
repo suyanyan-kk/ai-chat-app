@@ -9,8 +9,11 @@ from app.api.knowledge import router as knowledge_router
 from app.core.exception import register_exception
 from app.core.logger import logger
 import uvicorn
+from app.api.chunk_debug import router as chunk_router
 
 app = FastAPI()
+app.include_router(chunk_router)
+
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     logger.info(f"📥 请求: {request.method} {request.url}")

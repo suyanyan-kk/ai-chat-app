@@ -1,3 +1,4 @@
 export * from "./modules/chat"
 export * from "./modules/title"
 export * from "./modules/knowledge"
+export * from "./modules/chunkSearch"
