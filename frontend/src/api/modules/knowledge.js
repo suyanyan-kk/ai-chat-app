@@ -7,6 +7,10 @@ export const getKnowledge = (message) => {
 export const getKnowledgeDetail = (id) => {
   return get(`/getKnowledgeDetail/${id}`)
 }
+
+export const getKnowledgeDetailByFileId = (file_id) => {
+  return get(`/getKnowledgeDetailByFileId/${file_id}`)
+}
 // 新增知识库项
 export const addKnowledge = (data) => {
   return post("/addKnowledge",data)

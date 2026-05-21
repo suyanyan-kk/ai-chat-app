@@ -53,7 +53,7 @@ def build_rag_context(query: str, k: int = 3):
         metadata = item.metadata
 
         source_key = (
-                metadata.get("source_id"),
+                metadata.get("file_id"), 
 
                 metadata.get("locator_type"),
 
@@ -65,14 +65,14 @@ def build_rag_context(query: str, k: int = 3):
             seen_sources.add(source_key)
 
             sources.append({
-                "source_id":
-                    metadata.get("source_id"),
+                "file_id":
+                    metadata.get("file_id"),
 
-                "source_name":
-                    metadata.get("source_name"),
+                "file_name":
+                    metadata.get("file_name"),
 
-                "source_type":
-                    metadata.get("source_type"),
+                "file_type":
+                    metadata.get("file_type"),
 
                 "locator_type":
                     metadata.get("locator_type"),

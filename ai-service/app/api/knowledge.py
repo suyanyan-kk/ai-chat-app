@@ -155,17 +155,68 @@ async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db
     return {"code": 0, "message": "上传成功", "data": result}
 
 
-# 获取知识节点详情
-@router.get("/getKnowledgeDetail/{id}")
-def get_knowledge_detail(id: int, db: Session = Depends(get_db)):
+# 获取知识节点详情 包含文件信息（如果有） 
+@router.get("/getKnowledgeDetailByFileId/{file_id}")
+def get_knowledge_detail_by_file_id(
+    file_id: int,
+    db: Session = Depends(get_db)
+):
 
-    # 1. 查询树节点
+    knowledge = db.query(
+        models.Knowledge
+    ).filter(
+        models.Knowledge.file_id == file_id
+    ).first()
+
+    if not knowledge:
+        return {
+            "code": 1,
+            "message": "节点不存在"
+        }
+
+    result = build_knowledge_detail(
+        knowledge,
+        db
+    )
+
+    return {
+        "code": 0,
+        "message": "获取成功",
+        "data": result
+    }
+
+
+@router.get("/getKnowledgeDetail/{id}")
+def get_knowledge_detail(
+    id: int,
+    db: Session = Depends(get_db)
+):
+
     knowledge = db.get(models.Knowledge, id)
 
     if not knowledge:
-        return {"code": 1, "message": "节点不存在"}
+        return {
+            "code": 1,
+            "message": "节点不存在"
+        }
 
-    # 2. 基础树节点数据
+    result = build_knowledge_detail(
+        knowledge,
+        db
+    )
+
+    return {
+        "code": 0,
+        "message": "获取成功",
+        "data": result
+    }
+
+# 构建知识节点详情数据结构，包含文件信息
+def build_knowledge_detail(
+    knowledge: models.Knowledge,
+    db: Session
+):
+
     result = {
         "id": knowledge.id,
         "title": knowledge.title,
@@ -177,10 +228,13 @@ def get_knowledge_detail(id: int, db: Session = Depends(get_db)):
         "file": None,
     }
 
-    # 3. 如果是文件
+    # 文件信息
     if knowledge.file_id:
 
-        file_item = db.get(models.KnowledgeFile, knowledge.file_id)
+        file_item = db.get(
+            models.KnowledgeFile,
+            knowledge.file_id
+        )
 
         if file_item:
 
@@ -195,8 +249,7 @@ def get_knowledge_detail(id: int, db: Session = Depends(get_db)):
                 "embedding_status": file_item.embedding_status,
             }
 
-    return {"code": 0, "message": "获取成功", "data": result}
-
+    return result
 
 @router.get("/chunks/{file_id}")
 def get_chunks(file_id: int, db: Session = Depends(get_db)):

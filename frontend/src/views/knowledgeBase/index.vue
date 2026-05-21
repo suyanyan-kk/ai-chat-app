@@ -27,18 +27,19 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import KbTree from "@/components/knowledgeBase/KbTree.vue";
 import PreviewofData from "@/components/knowledgeBase/PreviewofData.vue";
 import EditorWrapper from "@/components/knowledgeBase/EditorWrapper.vue";
 import ViewEmpty from "@/components/knowledgeBase/ViewEmpty.vue";
-
 import { useKnowledgeBaseStore } from "@/stores/modules/knowledgeBase";
 import { storeToRefs } from "pinia";
-import { getKnowledge } from "@/api/modules/knowledge.js";
+import { getKnowledge, getKnowledgeDetailByFileId } from "@/api/modules/knowledge.js";
 import CreateFileModal from "@/components/knowledgeBase/CreateFileModal.vue";
 import ChunkPreview from "@/components/knowledgeBase/ChunkPreview.vue";
+import { useRoute } from "vue-router";
 
+const route = useRoute();
 // 当前视图：预览、编辑等addFile
 const currentView = ref("empty");
 const loading = ref(false);
@@ -69,6 +70,13 @@ const currentComponentProps = computed(() => {
       return {};
   }
 });
+
+const sourceId = route.query.source_id;
+
+const page = route.query.page;
+
+const keywordRoute = route.query.keyword;
+
 const handleSelect = (operationType, node) => {
   console.log("选中节点：", node);
   if (operationType === "createFile") {
@@ -110,6 +118,25 @@ const handleCreateFile = (data) => {
 //   items.value.push(...[mock(items.value.length), mock(items.value.length + 1)]);
 //   loading.value = false;
 // }
+watch(
+  () => route.query,
+  async (query) => {
+    if (!query.file_id) return;
+    await getKnowledgeDetailByFileId(query.file_id).then((res) => {
+      // debugger
+      if (res.code === 0) {
+        // 如果是文件要传递他的父节点的id
+        kbStore.toggleFolder(res.data?.parent_id);
+        handleSelect("preview", res.data);
+        kbStore.setCurrentId(res.data.id);
+        kbStore.getcurrentDetail(res.data);
+      }
+    });
+  },
+  {
+    immediate: true,
+  }
+);
 onMounted(async () => {
   const knowledgeList = await getKnowledge();
   kbStore.setList(knowledgeList);

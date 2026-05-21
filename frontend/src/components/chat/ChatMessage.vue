@@ -23,11 +23,11 @@
       <!-- ========================= -->
       <!-- 来源引用 -->
       <!-- ========================= -->
-      <div v-for="(source, index) in msg.sources" :key="index" class="source-item">
-        <div class="source-file">
-        📄 {{ source.source_name }}
-          <span v-if="formatSource(source)" class="source-meta" style="font-size: 12px; opacity: 0.6; margin-left: 6px;">
-            {{ formatSource(source) }}
+      <div v-for="(fileSource, index) in msg.sources" :key="index" class="source-item">
+        <div class="source-file" @click="openReference(fileSource)">
+        📄 {{ fileSource.file_name || '未知文件' }}
+          <span v-if="formatSource(fileSource)" class="source-meta" style="font-size: 12px; opacity: 0.6; margin-left: 6px;">
+            {{ formatSource(fileSource) }}
           </span>
         </div>
       </div>
@@ -42,7 +42,9 @@
 import { computed } from "vue";
 import { renderMarkdown } from "@/markdown";
 import { NCard } from "naive-ui";
+import { useRouter } from "vue-router"
 
+const router = useRouter();
 // props
 defineProps({
   msg: {
@@ -50,9 +52,22 @@ defineProps({
     required: true,
   },
 });
-function formatSource(source) {
-  const locatorType = source.locator_type;
-  const locatorValue = source.locator_value;
+const openReference = (fileSource) => {
+  console.log("打开引用：", fileSource);
+  const fileId = fileSource.file_id;
+  router.push({
+  path: "/kb",
+  query: {
+    file_id: fileSource.file_id,
+    page: fileSource.locator_value,
+    keywordRoute: fileSource.locatorType  //chunk_text 高亮文本
+  }
+})
+
+};
+const formatSource = (fileSource) => {
+  const locatorType = fileSource.locator_type;
+  const locatorValue = fileSource.locator_value;
 
   if (locatorType === "page") {
     return `第 ${locatorValue} 页`;
