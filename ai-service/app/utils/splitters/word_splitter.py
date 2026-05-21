@@ -7,7 +7,7 @@ from langchain.text_splitter import (
 from app.utils.splitters.chunk_builder import (
     build_chunk
 )
-
+ 
 
 recursive_splitter = RecursiveCharacterTextSplitter(
     chunk_size=300,

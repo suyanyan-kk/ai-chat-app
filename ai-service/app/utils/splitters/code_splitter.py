@@ -6,8 +6,9 @@ from langchain_text_splitters import (
 from app.utils.splitters.types import ChunkData
 from app.utils.splitters.chunk_builder import build_chunk
 
+# 代码必须：按函数 / 类切分
 
-LANGUAGE_MAP = {
+LANGUAGE_MAP = { 
     "py": Language.PYTHON,
     "js": Language.JS,
     "ts": Language.TS,
@@ -18,8 +19,18 @@ LANGUAGE_MAP = {
 
 # 普通文本 splitter
 default_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=300,
-    chunk_overlap=50,
+            chunk_size=600,
+            chunk_overlap=100,
+            separators=[
+                "\n\n",
+                "\n",
+                "。",
+                "！",
+                "？",
+                "；",
+                "，",
+                " "
+            ]
 )
 
 
@@ -62,9 +73,9 @@ def split_code(
 
                         "language": "unknown",
 
-                        "chunk_size": 300,
+                        "chunk_size": 600,
 
-                        "chunk_overlap": 50,
+                        "chunk_overlap": 100,
                     }
                 )
             )
@@ -77,8 +88,18 @@ def split_code(
 
     language_splitter = RecursiveCharacterTextSplitter.from_language(
         language=language,
-        chunk_size=300,
-        chunk_overlap=50
+        chunk_size=600,
+        chunk_overlap=100,
+         separators=[
+                "\n\n",
+                "\n",
+                "。",
+                "！",
+                "？",
+                "；",
+                "，",
+                " "
+            ]
     )
 
     chunks = language_splitter.split_text(content)
@@ -101,9 +122,9 @@ def split_code(
 
                     "language": language.name,
 
-                    "chunk_size": 300,
+                    "chunk_size": 600,
 
-                    "chunk_overlap": 50,
+                    "chunk_overlap": 100,
                 }
             )
         )

@@ -4,7 +4,7 @@ from app.utils.splitters.markdown_splitter import split_markdown
 from app.utils.splitters.pdf_splitter import split_pdf
 from app.utils.splitters.word_splitter import split_word
 
-
+ 
 # 根据文件类型自动选择切片器
 def split_by_file_type(
     file_id: int, original_name: str, uuid_name: str, file_path: str, content: str

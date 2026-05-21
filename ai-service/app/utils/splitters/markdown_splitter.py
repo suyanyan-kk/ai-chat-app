@@ -1,10 +1,11 @@
 from langchain.text_splitter import MarkdownHeaderTextSplitter,RecursiveCharacterTextSplitter
 from app.utils.splitters.chunk_builder import build_chunk
 from app.utils.splitters.types import ChunkData
+# 按标题切分
 headers_to_split_on = [
     ("#", "Header 1"),
     ("##", "Header 2"),
-    ("###", "Header 3"),
+    ("###", "Header 3"), 
 ]
 
 markdown_splitter = MarkdownHeaderTextSplitter(
@@ -12,8 +13,8 @@ markdown_splitter = MarkdownHeaderTextSplitter(
 )
 
 recursive_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=300,
-    chunk_overlap=50
+    chunk_size=700,
+    chunk_overlap=120
 )
 def split_markdown(file_id: int,original_name: str, uuid_name: str, text: str) -> list[ChunkData]:
 
@@ -57,8 +58,8 @@ def split_markdown(file_id: int,original_name: str, uuid_name: str, text: str) -
                         "h1": doc.metadata.get("Header 1"),
                         "h2": doc.metadata.get("Header 2"),
                         "h3": doc.metadata.get("Header 3"),
-                        "chunk_size": 300,
-                        "chunk_overlap": 50
+                        "chunk_size": 700,
+                        "chunk_overlap": 120
                     }
                 )
             )
