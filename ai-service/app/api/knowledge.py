@@ -216,7 +216,8 @@ def get_chunks(file_id: int, db: Session = Depends(get_db)):
                 "file_id": chunk.file_id,
                 "chunk_index": chunk.chunk_index,
                 "content": chunk.content,
-                "meta_info": json.loads(chunk.meta_info or "{}"),
+                # "meta_info": json.loads(chunk.meta_info or "{}"),
+                "meta_info": chunk.meta_info or {},
                 "embedding_status": chunk.embedding_status,
             }
             for chunk in chunks

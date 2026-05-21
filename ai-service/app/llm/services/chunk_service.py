@@ -1,27 +1,17 @@
-from chromadb import PersistentClient
-from sentence_transformers import SentenceTransformer
-
-CHROMA_PATH = "./chroma_db"
-
-client = PersistentClient(
-    path=CHROMA_PATH
+from app.rag.vectorstore.chroma_service import (
+    vector_store
 )
 
-collection = client.get_or_create_collection(
-    name="knowledge"
-)
+"""
+Chunk 调试服务
+"""
 
-embedding_model = SentenceTransformer(
-    "BAAI/bge-small-zh-v1.5"
-)
 
-# 获取文件所有chunk
-def get_chunks_by_file(file_id: str):
+# 查看所有 chunk
+def get_all_chunks():
 
-    result = collection.get(
-        where={
-            "file_id": file_id
-        },
+    result = vector_store.get(
+
         include=[
             "documents",
             "metadatas"
@@ -29,8 +19,16 @@ def get_chunks_by_file(file_id: str):
     )
 
     ids = result.get("ids", [])
-    documents = result.get("documents", [])
-    metadatas = result.get("metadatas", [])
+
+    documents = result.get(
+        "documents",
+        []
+    )
+
+    metadatas = result.get(
+        "metadatas",
+        []
+    )
 
     data = []
 
@@ -39,54 +37,89 @@ def get_chunks_by_file(file_id: str):
         metadata = metadatas[i] or {}
 
         data.append({
+
             "id": ids[i],
+
             "content": documents[i],
+
             "length": len(documents[i]),
-            "chunk_index": metadata.get("chunk_index"),
-            "file_name": metadata.get("file_name"),
-            "source": metadata.get("source"),
+
             "metadata": metadata
         })
 
     return data
 
 
-# 测试向量召回
-def search_chunks(
-    query: str,
-    top_k: int = 5
-):
+# 根据 file_id 查看 chunk
+def get_chunks_by_file(file_id):
 
-    embedding = embedding_model.encode(
-        query
-    ).tolist()
+    result = vector_store.get(
 
-    result = collection.query(
-        query_embeddings=[embedding],
-        n_results=top_k,
+        where={
+            "file_id": int(file_id)
+        },
         include=[
             "documents",
-            "metadatas",
-            "distances"
+            "metadatas"
         ]
     )
 
-    documents = result["documents"][0]
-    metadatas = result["metadatas"][0]
-    distances = result["distances"][0]
-    ids = result["ids"][0]
+    ids = result.get("ids", [])
+
+    documents = result.get(
+        "documents",
+        []
+    )
+
+    metadatas = result.get(
+        "metadatas",
+        []
+    )
 
     data = []
 
     for i in range(len(ids)):
 
-        score = 1 - distances[i]
+        metadata = metadatas[i] or {}
 
         data.append({
+
             "id": ids[i],
+
             "content": documents[i],
+
+            "length": len(documents[i]),
+
+            "metadata": metadata
+        })
+
+    return data
+
+
+# chunk 向量搜索调试
+def search_chunks(
+    query,
+    top_k=5
+):
+
+    docs = vector_store.similarity_search_with_score(
+
+        query=query,
+
+        k=top_k
+    )
+
+    data = []
+
+    for doc, score in docs:
+
+        data.append({
+
+            "content": doc.page_content,
+
             "score": round(score, 4),
-            "metadata": metadatas[i]
+
+            "metadata": doc.metadata
         })
 
     return data

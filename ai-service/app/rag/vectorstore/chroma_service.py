@@ -32,6 +32,7 @@ vector_store = Chroma(
 
 
 def save_chunks_to_chroma(chunks):
+    print("==========save_chunks_to_chroma=======")
 
     texts = []
 
@@ -39,7 +40,7 @@ def save_chunks_to_chroma(chunks):
 
     ids = []
 
-    for chunk in chunks:
+    for chunk in chunks: 
 
         # 文本
         texts.append(
@@ -47,6 +48,7 @@ def save_chunks_to_chroma(chunks):
         )
 
         # ⭐ 真正的 metadata
+        print("原始类型 meta_info:",type(chunk.meta_info))
         print("原始 meta_info:", chunk.meta_info)
         metadata = chunk.meta_info or {}
 
@@ -73,7 +75,7 @@ def save_chunks_to_chroma(chunks):
         ids=ids
     )
 
-    print("保存到 Chroma 成功")
+    print("=====保存到 Chroma 成功========",metadatas )
 #    Chroma 实际存储长这样
 # 你最终其实是：
 # id: vector_id

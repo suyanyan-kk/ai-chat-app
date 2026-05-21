@@ -19,9 +19,10 @@ def build_chunk(
         # =========================
         # source
         # =========================
-        "source_id": file_id,
-        "source_name": original_name,
-        "source_type":uuid_name.split(".")[-1].lower(),
+        "file_id": file_id,
+        "file_name": original_name,
+        "file_type":uuid_name.split(".")[-1].lower(),
+        "file_uuid_name": uuid_name,
         # =========================
         # chunk
         # =========================
