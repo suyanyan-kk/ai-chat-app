@@ -49,15 +49,15 @@ def split_markdown(file_id: int,original_name: str, uuid_name: str, text: str) -
                     chunk_index=global_chunk_index,
                     splitter="markdown",
                     locator_type="section",
-                    locator_value=section,
+                    locator_value=section or "",
                     extra={
                         "file_type": "md",
                         "char_count": len(chunk),
                         "doc_index": doc_index,
                         "section": section,
-                        "h1": doc.metadata.get("Header 1"),
-                        "h2": doc.metadata.get("Header 2"),
-                        "h3": doc.metadata.get("Header 3"),
+                        "h1": doc.metadata.get("Header 1",""),
+                        "h2": doc.metadata.get("Header 2",""),
+                        "h3": doc.metadata.get("Header 3",""),
                         "chunk_size": 700,
                         "chunk_overlap": 120
                     }

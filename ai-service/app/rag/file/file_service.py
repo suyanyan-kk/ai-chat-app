@@ -6,7 +6,8 @@ from app.utils.parsers.parser_factory import parse_by_file_type
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 
-async def save_upload_file(file, db):
+async def save_upload_file(file, db):  
+    print("save_upload_file:", file.filename)
 
     # 读取文件
     content = await file.read()

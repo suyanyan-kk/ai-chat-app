@@ -68,7 +68,7 @@ def split_word(
 
                     locator_value=current_heading,
 
-                    extra_metadata={
+                    extra={
 
                         "paragraph_chunk_index":
                             paragraph_chunk_index

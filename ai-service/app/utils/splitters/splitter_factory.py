@@ -9,7 +9,7 @@ from app.utils.splitters.word_splitter import split_word
 def split_by_file_type(
     file_id: int, original_name: str, uuid_name: str, file_path: str, content: str
 ):
-
+    
     ext = uuid_name.split(".")[-1].lower()
 
     print(f"文件类型: {ext}")

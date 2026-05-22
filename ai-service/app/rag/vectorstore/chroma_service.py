@@ -3,7 +3,7 @@ from langchain_chroma import Chroma
 from app.rag.embedding.embedding_service import (
     embedding_model
 )
-
+from app.utils.cleanMetadata  import  clean_metadata
 
 """
 Chroma 向量数据库服务
@@ -51,13 +51,15 @@ def save_chunks_to_chroma(chunks):
         print("原始类型 meta_info:",type(chunk.meta_info))
         print("原始 meta_info:", chunk.meta_info)
         metadata = chunk.meta_info or {}
-
+        metadata = clean_metadata(metadata)
+        print("清洗后 meta_info:", metadata)
         # 再补充一些系统字段
         metadata.update({
             "chunk_id": chunk.id,
             "embedding_status": chunk.embedding_status
         })
-
+     
+       
         metadatas.append(metadata)
 
         # 向量 id

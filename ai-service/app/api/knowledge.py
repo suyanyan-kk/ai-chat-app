@@ -150,6 +150,7 @@ def delete_knowledge(id: int, db: Session = Depends(get_db)):
 
 @router.post("/uploadKnowledgeFile", response_model=schemas.UploadResponse)
 async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    print("接收到文件:", file.filename)
     result = await save_upload_file(file, db)
 
     return {"code": 0, "message": "上传成功", "data": result}
