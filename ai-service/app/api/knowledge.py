@@ -152,7 +152,7 @@ def delete_knowledge(id: int, db: Session = Depends(get_db)):
 async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db)):
     print("接收到文件:", file.filename)
     result = await save_upload_file(file, db)
-
+    print("文件上传完成:", result)
     return {"code": 0, "message": "上传成功", "data": result}
 
 

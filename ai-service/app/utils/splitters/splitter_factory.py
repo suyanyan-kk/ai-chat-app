@@ -8,7 +8,9 @@ from app.utils.splitters.code_splitter import CodeSplitter
 
 from app.utils.splitters.text_splitter import TextSplitter
 
-
+from app.utils.splitters.semantic_splitter import (
+    SemanticSplitter
+)
 class SplitterFactory:
 
     @staticmethod
@@ -30,15 +32,15 @@ class SplitterFactory:
             "java": CodeSplitter(),
 
             # word
-            "doc": WordSplitter(),
-            "docx": WordSplitter(),
+            "doc": SemanticSplitter(),
+            "docx": SemanticSplitter(),
 
             # pdf
-            "pdf": PDFSplitter(),
+            "pdf": SemanticSplitter(),
 
             # text
-            "txt": TextSplitter(),
+            "txt": SemanticSplitter(),
         }
-
+        # return 
         # 默认 splitter
-        return mapping.get(file_type, TextSplitter())
+        return mapping.get(file_type, SemanticSplitter())

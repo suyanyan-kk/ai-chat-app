@@ -2,11 +2,13 @@ import uuid
 
 from app.knowledgedb import models
 
-from app.utils.parsers.parser_factory import ParserFactory
+from app.utils.splitters.splitter_factory import (
+    SplitterFactory
+)
 
-from app.utils.splitters.splitter_factory import SplitterFactory
-
-from app.utils.splitters.chunk_builder import ChunkBuilder
+from app.utils.splitters.chunk_builder import (
+    ChunkBuilder
+)
 
 from app.rag.vectorstore.chroma_service import (
     save_chunks_to_chroma
@@ -18,10 +20,12 @@ def create_chunks(
         file_id,
         original_name,
         uuid_name,
-        file_path
+        parsed_docs,
 ):
 
-    # 文件类型
+    # =========================
+    # file type
+    # =========================
     file_type = original_name.split(".")[-1].lower()
 
     source_info = {
@@ -32,24 +36,29 @@ def create_chunks(
 
         "uuid_name": uuid_name,
 
-        "file_type": file_type
+        "file_type": file_type,
     }
 
-    # 1 parser
-    parser = ParserFactory.get_parser(file_type)
+    # =========================
+    # splitter
+    # =========================
+    splitter = SplitterFactory.get_splitter(
+        file_type
+    )
 
-    parsed_docs = parser.parse(file_path)
-
-    # 2 splitter
-    splitter = SplitterFactory.get_splitter(file_type)
-
-    # 3 chunk builder
+    # =========================
+    # builder
+    # =========================
     builder = ChunkBuilder(splitter)
 
     all_chunk_items = []
 
-    # 4 build chunks
-    for doc in parsed_docs:
+    global_chunk_index = 0
+
+    # =========================
+    # build chunks
+    # =========================
+    for doc_index, doc in enumerate(parsed_docs):
 
         chunks = builder.build(
 
@@ -59,34 +68,109 @@ def create_chunks(
 
                 **source_info,
 
-                "page": doc.get("page")
+                "page": doc.get("page"),
+
+                "doc_index": doc_index,
+                
             }
         )
 
-        # 5 save mysql
-        for index, chunk in enumerate(chunks):
+        for chunk in chunks:
 
-            print(f"\n--- chunk {index} ---")
-            print(chunk["text"])
+            metadata = chunk["metadata"]
 
-            chunk_item = models.KnowledgeChunk(
+            chunk_type = metadata.get(
+                "chunk_type"
+            )
+
+            parent_index = metadata.get(
+                "parent_index"
+            )
+
+            child_index = metadata.get(
+                "child_index"
+            )
+
+            structure_index = metadata.get(
+                "structure_index"
+            )
+        vector_id = (
+
+            f"file_{file_id}_"
+
+            f"chunk_{global_chunk_index}"
+            )
+        
+
+            # =========================
+            # debug
+            # =========================
+        print(
+                f"\n--- chunk {global_chunk_index} ---"
+            )
+
+        print(
+                "vector_id:",
+                vector_id
+            )
+
+        print(
+                "splitter:",
+                metadata.get("splitter")
+            )
+
+        print(
+                "semantic_layer:",
+                metadata.get(
+                    "semantic_layer"
+                )
+            )
+
+        print(
+                "chunk_type:",
+                chunk_type
+            )
+
+        print(
+                "page:",
+                metadata.get("page")
+            )
+
+        print(
+                chunk["text"]
+            )
+
+        print(
+                "\n=====================\n"
+            )
+
+            # =========================
+            # PostgreSQL
+            # =========================
+        chunk_item = models.KnowledgeChunk(
 
                 file_id=file_id,
 
-                chunk_index=index,
+                chunk_index=global_chunk_index,
 
                 content=chunk["text"],
 
-                meta_info=chunk["metadata"],
+                meta_info=metadata,
 
                 embedding_status="pending",
 
-                vector_id=str(uuid.uuid4())
+                vector_id=vector_id
             )
 
-            all_chunk_items.append(chunk_item)
+        all_chunk_items.append(
+                chunk_item
+            )
 
-    # 6 批量保存
+        global_chunk_index += 1
+
+    # =========================
+    # batch save
+    # =========================
     db.add_all(all_chunk_items)
 
     db.commit()
@@ -95,56 +179,22 @@ def create_chunks(
 
         db.refresh(item)
 
-    # 7 save chroma
-    save_chunks_to_chroma(all_chunk_items)
+    # =========================
+    # save chroma
+    # =========================
+    save_chunks_to_chroma(
+        all_chunk_items
+    )
 
     return all_chunk_items
 
+# parent
+# file_8_s_0_p_0
+# child
+# file_8_s_0_p_0_c_2
 
-
-# 第一版
-# from app.knowledgedb import models, schemas
-# # from app.utils.chunk import split_text
-# from app.utils.splitters.splitter_factory import split_by_file_type
-# import json
-# import uuid
-# from app.rag.vectorstore.chroma_service import ( 
-#     save_chunks_to_chroma
-# )
-# def create_chunks(db,file_id,original_name,uuid_name,file_path,text):
-
-#     chunks = split_by_file_type(
-#             file_id,
-#             original_name,
-#             uuid_name,
-#             file_path,
-#             text
-#             )
-#     print("\n========== chunk result ==========\n")
-
-#     chunk_items = []
-# # enumerate 函数可以同时获取列表的索引和内容，这里我们需要知道每个 chunk 的顺序，所以使用 enumerate 来获取 chunk_index和 chunk_text
-#     for index, chunk in enumerate(chunks):
-#         content = chunk.content
-#         meta_info = chunk.metadata
-#         meta_info["chunk_index"] = index  # 添加 chunk_index 到 meta_info 中，方便后续查询和调试
-#         print(f"\n--- chunk {index} ---")
-#         print(content)
-#         print("长度:", len(content))
-#         print("meta_info:", meta_info)
-#         chunk_item = models.KnowledgeChunk(
-#             file_id=file_id,
-#             chunk_index=index,
-#             content=content,
-#             meta_info=meta_info,
-#             embedding_status="pending",
-#             vector_id=str(uuid.uuid4())
-#         )
-
-#         chunk_items.append(chunk_item)
-
-#     db.add_all(chunk_items) #最后一次性添加所有 chunk_item，减少数据库交互次数，提高效率
-#     db.commit()
-#     for item in chunk_items:
-#         db.refresh(item)
-#     save_chunks_to_chroma(chunk_items)  
+# file_3_s_2_p_1_c_5
+# 文件3
+# 结构2
+# parent1
+# child5

@@ -32,9 +32,13 @@
       <div class="result-list">
         <div class="result-item" v-for="item in resultList" :key="item.id">
           <div class="top">
-            <div>
+          <div>
               文件 ID:
               {{ item.metadata?.file_id||'未知文件ID' }}
+            </div>
+            <div>
+              ID:
+              {{ item.id||'未知ID' }}
             </div>
 
             <div class="score">
@@ -54,8 +58,24 @@
             </div>
 
             <div>
-              某个文件的切片ID Chunk Index:
-              {{ item.metadata.chunk_index }}
+              file_name":
+              {{ item.metadata?.file_name }}
+            </div>
+             <div>
+              parent_index:
+              {{ item.metadata?.parent_index }}
+            </div>
+            <div>
+              child_index:
+              {{ item.metadata?.child_index }}
+            </div>
+            <div>
+              parent_id:
+              {{ item.metadata?.parent_id }}
+            </div>
+            <div>
+              chunk_id:
+              {{ item.metadata?.chunk_id }}
             </div>
           </div>
         </div>

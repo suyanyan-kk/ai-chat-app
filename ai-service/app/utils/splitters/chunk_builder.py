@@ -1,19 +1,29 @@
+
 import uuid
 
-from app.utils.splitters.common.parent_splitter import ParentSplitter
+from app.utils.splitters.common.semantic_parent_splitter import (
+    SemanticParentSplitter
+)
 
-from app.utils.splitters.common.child_splitter import ChildSplitter
+from app.utils.splitters.common.semantic_child_splitter import (
+    SemanticChildSplitter
+)
 
 
 class ChunkBuilder:
 
     def __init__(self, splitter):
 
-        self.splitter = splitter
+        # semantic structure
+        self.structure_splitter = splitter
 
-        self.parent_splitter = ParentSplitter()
+        # semantic parent
+        self.parent_splitter = \
+            SemanticParentSplitter()
 
-        self.child_splitter = ChildSplitter()
+        # semantic child
+        self.child_splitter = \
+            SemanticChildSplitter()
 
     def build(
             self,
@@ -23,14 +33,21 @@ class ChunkBuilder:
 
         results = []
 
-        # 1 文件结构切分
-        structure_chunks = self.splitter.split(text)
+        # =========================
+        # 1 structure split
+        # =========================
+        structure_chunks = \
+            self.structure_splitter.split(text)
 
-        # 2 parent chunk
+        # =========================
+        # 2 semantic parent
+        # =========================
         for structure_index, structure_text in enumerate(structure_chunks):
 
             parent_chunks = \
-                self.parent_splitter.split(structure_text)
+                self.parent_splitter.split(
+                    structure_text
+                )
 
             for parent_index, parent_text in enumerate(parent_chunks):
 
@@ -42,15 +59,29 @@ class ChunkBuilder:
 
                     "parent_id": parent_id,
 
-                    "file_id": source_info["file_id"],
+                    "file_id":
+                        source_info["file_id"],
 
-                    "file_name": source_info["file_name"],
+                    "file_name":
+                        source_info["file_name"],
 
-                    "file_type": source_info["file_type"],
+                    "file_type":
+                        source_info["file_type"],
 
-                    "structure_index": structure_index,
+                    # "page":
+                    #     source_info.get("page"),
 
-                    "parent_index": parent_index
+                    "structure_index":
+                        structure_index,
+
+                    "parent_index":
+                        parent_index,
+
+                    "semantic_layer":
+                        "parent",
+
+                    "splitter":
+                        self.parent_splitter.__class__.__name__,
                 }
 
                 parent_doc = {
@@ -64,9 +95,13 @@ class ChunkBuilder:
 
                 results.append(parent_doc)
 
-                # 3 child chunk
+                # =========================
+                # 3 semantic child
+                # =========================
                 child_chunks = \
-                    self.child_splitter.split(parent_text)
+                    self.child_splitter.split(
+                        parent_text
+                    )
 
                 for child_index, child_text in enumerate(child_chunks):
 
@@ -76,17 +111,32 @@ class ChunkBuilder:
 
                         "parent_id": parent_id,
 
-                        "file_id": source_info["file_id"],
+                        "file_id":
+                            source_info["file_id"],
 
-                        "file_name": source_info["file_name"],
+                        "file_name":
+                            source_info["file_name"],
 
-                        "file_type": source_info["file_type"],
+                        "file_type":
+                            source_info["file_type"],
 
-                        "structure_index": structure_index,
+                        # "page":
+                        #     source_info.get("page"),
 
-                        "parent_index": parent_index,
+                        "structure_index":
+                            structure_index,
 
-                        "child_index": child_index
+                        "parent_index":
+                            parent_index,
+
+                        "child_index":
+                            child_index,
+
+                        "semantic_layer":
+                            "child",
+
+                        "splitter":
+                            self.child_splitter.__class__.__name__,
                     }
 
                     child_doc = {
@@ -101,5 +151,7 @@ class ChunkBuilder:
                     results.append(child_doc)
 
         return results
+
+
 
 
