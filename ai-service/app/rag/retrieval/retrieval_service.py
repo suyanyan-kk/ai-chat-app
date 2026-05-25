@@ -55,9 +55,7 @@ def build_rag_context(query: str, k: int = 3):
         source_key = (
                 metadata.get("file_id"), 
 
-                metadata.get("locator_type"),
 
-                metadata.get("locator_value"),
         )
         # 去重
         if source_key not in seen_sources:
@@ -71,14 +69,8 @@ def build_rag_context(query: str, k: int = 3):
                 "file_name":
                     metadata.get("file_name"),
 
-                "file_type":
+                "file_type": 
                     metadata.get("file_type"),
-
-                "locator_type":
-                    metadata.get("locator_type"),
-
-                "locator_value":
-                    metadata.get("locator_value"),
 
                 # "file_id": metadata.get("file_id"),
                 # "uuid_name": metadata.get("uuid_name"),

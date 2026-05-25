@@ -58,7 +58,7 @@
             </div>
 
             <div>
-              file_name":
+              file_name:
               {{ item.metadata?.file_name }}
             </div>
              <div>

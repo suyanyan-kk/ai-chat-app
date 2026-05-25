@@ -79,75 +79,48 @@ def create_chunks(
 
             metadata = chunk["metadata"]
 
-            chunk_type = metadata.get(
-                "chunk_type"
-            )
+            chunk_type = metadata.get("chunk_type")
 
-            parent_index = metadata.get(
-                "parent_index"
-            )
+            parent_index = metadata.get("parent_index")
 
-            child_index = metadata.get(
-                "child_index"
-            )
+            child_index = metadata.get("child_index")
 
-            structure_index = metadata.get(
-                "structure_index"
-            )
-        vector_id = (
+            structure_index = metadata.get("structure_index")
+            vector_id = (
+                f"file_{file_id}_"
 
-            f"file_{file_id}_"
-
-            f"chunk_{global_chunk_index}"
+                f"chunk_{global_chunk_index}"
             )
         
 
             # =========================
             # debug
             # =========================
-        print(
-                f"\n--- chunk {global_chunk_index} ---"
-            )
+            print(f"\n--- chunk {global_chunk_index} ---")
 
-        print(
-                "vector_id:",
-                vector_id
-            )
+            print("vector_id:",vector_id)
 
-        print(
-                "splitter:",
-                metadata.get("splitter")
-            )
+            print("splitter:",metadata.get("splitter"))
 
-        print(
+            print(
                 "semantic_layer:",
                 metadata.get(
                     "semantic_layer"
                 )
             )
 
-        print(
-                "chunk_type:",
-                chunk_type
-            )
+            print("chunk_type:",chunk_type)
 
-        print(
-                "page:",
-                metadata.get("page")
-            )
+            print("page:",metadata.get("page"))
 
-        print(
-                chunk["text"]
-            )
+            print(chunk["text"])
 
-        print(
-                "\n=====================\n"
-            )
+            print("\n=====================\n")
 
             # =========================
             # PostgreSQL
             # =========================
-        chunk_item = models.KnowledgeChunk(
+            chunk_item = models.KnowledgeChunk(
 
                 file_id=file_id,
 
@@ -162,11 +135,11 @@ def create_chunks(
                 vector_id=vector_id
             )
 
-        all_chunk_items.append(
+            all_chunk_items.append(
                 chunk_item
             )
 
-        global_chunk_index += 1
+            global_chunk_index += 1
 
     # =========================
     # batch save

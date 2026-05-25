@@ -121,7 +121,7 @@ async def save_upload_file(file, db):
 
         uuid_name=uuid_name,
 
-        parsed_docs=parsed_docs
+        parsed_docs=parsed_docs 
     )
 
     return file_item

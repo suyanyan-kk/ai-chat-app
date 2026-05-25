@@ -6,7 +6,7 @@ from app.utils.message import create_message
 from ..model import model
 from app.core.logger import logger
 from app.core.exception import AppException
-from app.rag.retrieval.retrieval_service import build_rag_context
+from app.rag.retrieval.retrieval_service import build_rag_context 
 
 
 def stream_chat(session_id: str, user_input: str):
