@@ -17,7 +17,7 @@ BAAI/bge-small-zh-v1.5
 # 创建 embedding 模型
 embedding_model = HuggingFaceEmbeddings( 
 
-    # embedding 模型名称
+    # embedding 向量模型名称
     model_name="BAAI/bge-small-zh-v1.5",
 
     # 模型初始化参数

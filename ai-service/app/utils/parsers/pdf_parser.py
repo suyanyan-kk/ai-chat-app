@@ -1,14 +1,45 @@
 import fitz
 
-def parse_pdf(file_path):
 
-    text = ""
+class PDFParser:
 
-    doc = fitz.open(file_path)
+    def parse(self, file_path):
 
-    for page in doc:
-        text += page.get_text()
+        doc = fitz.open(file_path)
 
-    doc.close()
+        pages = []
 
-    return text
+        for page_number in range(len(doc)):
+
+            page = doc[page_number]
+
+            text = page.get_text()
+
+            pages.append({
+
+                "page": page_number + 1,
+
+                "text": text
+            })
+
+        return pages
+
+
+
+
+
+
+# import fitz
+
+# def parse_pdf(file_path):
+
+#     text = ""
+
+#     doc = fitz.open(file_path)
+
+#     for page in doc:
+#         text += page.get_text()
+
+#     doc.close()
+
+#     return text

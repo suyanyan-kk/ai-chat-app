@@ -1,81 +1,96 @@
-from docx import Document
+from app.utils.splitters.base_splitter import BaseSplitter
 
-from langchain.text_splitter import (
-    RecursiveCharacterTextSplitter
-)
 
-from app.utils.splitters.chunk_builder import (
-    build_chunk
-)
+class WordSplitter(BaseSplitter):
+
+    def split(self, text):
+
+        sections = text.split("\n\n")
+
+        return sections
+
+
+
+# from docx import Document
+
+# from langchain.text_splitter import (
+#     RecursiveCharacterTextSplitter
+# )
+
+# from app.utils.splitters.chunk_builder import (
+#     build_chunk
+# )
+# from app.utils.splitters.types import ChunkData
  
 
-recursive_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=300,
-    chunk_overlap=50
-)
+# recursive_splitter = RecursiveCharacterTextSplitter(
+#     chunk_size=300,
+#     chunk_overlap=50
+# )
 
 
-def split_word(
-    file_id: int,
-    original_name: str,
-    uuid_name: str,
-    file_path: str,
-):
+# def split_word(
+#     file_id: int,
+#     original_name: str,
+#     uuid_name: str,
+#     file_path: str,
+#     content: str
+# )-> list[ChunkData]:
 
-    doc = Document(file_path)
+#     doc = Document(file_path)
 
-    final_chunks = []
+#     final_chunks = []
 
-    global_chunk_index = 0
+#     global_chunk_index = 0
 
-    current_heading = "正文"
+#     current_heading = "正文"
 
-    for para in doc.paragraphs:
+#     for para in doc.paragraphs:
 
-        text = para.text.strip()
+#         text = para.text.strip()
 
-        if not text:
-            continue
+#         if not text:
+#             continue
 
-        # Heading
-        if para.style.name.startswith("Heading"):
+#         # Heading
+#         if para.style.name.startswith("Heading"):
 
-            current_heading = text
+#             current_heading = text
 
-            continue
+#             continue
 
-        chunks = recursive_splitter.split_text(text)
+#         chunks = recursive_splitter.split_text(text)
 
-        for paragraph_chunk_index, chunk in enumerate(chunks):
+#         for paragraph_chunk_index, chunk in enumerate(chunks):
 
-            final_chunks.append(
+#             final_chunks.append(
 
-                build_chunk(
+#                 build_chunk(
 
-                    file_id=file_id,
+#                     file_id=file_id,
 
-                    original_name=original_name,
+#                     original_name=original_name,
 
-                    uuid_name=uuid_name,
+#                     uuid_name=uuid_name,
 
-                    content=chunk,
+#                     content=chunk,
 
-                    chunk_index=global_chunk_index,
+#                     chunk_index=global_chunk_index,
 
-                    splitter="word_recursive",
+#                     splitter="word_recursive",
 
-                    locator_type="heading",
+#                     locator_type="heading",
 
-                    locator_value=current_heading,
+#                     locator_value=current_heading,
 
-                    extra={
+#                     extra={
 
-                        "paragraph_chunk_index":
-                            paragraph_chunk_index
-                    }
-                )
-            )
+#                         "paragraph_chunk_index":
+#                             paragraph_chunk_index
+#                     }
+#                 )
+#             )
 
-            global_chunk_index += 1
+#             global_chunk_index += 1
 
-    return final_chunks
+#     return final_chunks

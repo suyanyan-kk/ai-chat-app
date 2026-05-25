@@ -1,52 +1,105 @@
-from app.utils.splitters.types import ChunkData
+import uuid
+
+from app.utils.splitters.common.parent_splitter import ParentSplitter
+
+from app.utils.splitters.common.child_splitter import ChildSplitter
 
 
-def build_chunk(
-    *,
-    file_id: int,
-    original_name: str,
-    uuid_name: str,
-    content: str,
-    chunk_index: int,
-    splitter: str,
-    locator_type: str | None = None,
-    locator_value: str | int | None = None,
-    extra: dict | None = None
-)-> ChunkData:
+class ChunkBuilder:
 
-    metadata = {
+    def __init__(self, splitter):
 
-        # =========================
-        # source
-        # =========================
-        "file_id": file_id,
-        "file_name": original_name,
-        "file_type":uuid_name.split(".")[-1].lower(),
-        "file_uuid_name": uuid_name,
-        # =========================
-        # chunk
-        # =========================
-        "chunk_index": chunk_index,
-        # =========================
-        # splitter
-        # =========================
-        "splitter": splitter,
-        # =========================
-        # locator
-        # =========================
-        "locator_type": locator_type,
-        "locator_value": locator_value,
-        # =========================
-        # display
-        # =========================
-        "char_count": len(content),
-    }
+        self.splitter = splitter
 
-    # ⭐ extra 扁平展开
-    if extra:
-        metadata.update(extra)
+        self.parent_splitter = ParentSplitter()
 
-    return ChunkData(
-        content=content,
-        metadata=metadata
-    )
+        self.child_splitter = ChildSplitter()
+
+    def build(
+            self,
+            text,
+            source_info
+    ):
+
+        results = []
+
+        # 1 文件结构切分
+        structure_chunks = self.splitter.split(text)
+
+        # 2 parent chunk
+        for structure_index, structure_text in enumerate(structure_chunks):
+
+            parent_chunks = \
+                self.parent_splitter.split(structure_text)
+
+            for parent_index, parent_text in enumerate(parent_chunks):
+
+                parent_id = str(uuid.uuid4())
+
+                parent_metadata = {
+
+                    "chunk_type": "parent",
+
+                    "parent_id": parent_id,
+
+                    "file_id": source_info["file_id"],
+
+                    "file_name": source_info["file_name"],
+
+                    "file_type": source_info["file_type"],
+
+                    "structure_index": structure_index,
+
+                    "parent_index": parent_index
+                }
+
+                parent_doc = {
+
+                    "id": parent_id,
+
+                    "text": parent_text,
+
+                    "metadata": parent_metadata
+                }
+
+                results.append(parent_doc)
+
+                # 3 child chunk
+                child_chunks = \
+                    self.child_splitter.split(parent_text)
+
+                for child_index, child_text in enumerate(child_chunks):
+
+                    child_metadata = {
+
+                        "chunk_type": "child",
+
+                        "parent_id": parent_id,
+
+                        "file_id": source_info["file_id"],
+
+                        "file_name": source_info["file_name"],
+
+                        "file_type": source_info["file_type"],
+
+                        "structure_index": structure_index,
+
+                        "parent_index": parent_index,
+
+                        "child_index": child_index
+                    }
+
+                    child_doc = {
+
+                        "id": str(uuid.uuid4()),
+
+                        "text": child_text,
+
+                        "metadata": child_metadata
+                    }
+
+                    results.append(child_doc)
+
+        return results
+
+
