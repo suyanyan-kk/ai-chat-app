@@ -6,7 +6,8 @@ from app.utils.message import create_message
 from ..model import model
 from app.core.logger import logger
 from app.core.exception import AppException
-from app.rag.retrieval.retrieval_service import build_rag_context 
+# from app.rag.retrieval.retrieval_service import build_rag_context
+from app.rag.retrieval.retrieval_service import retrieval_pipeline
 
 
 def stream_chat(session_id: str, user_input: str):
@@ -19,7 +20,9 @@ def stream_chat(session_id: str, user_input: str):
         # =========================
         # RAG
         # =========================
-        rag_data = build_rag_context(user_input)
+        # rag_data = build_rag_context(user_input)
+        rag_data = retrieval_pipeline(user_input)
+
         context = rag_data["context"]
         sources = rag_data["sources"]
         # =========================

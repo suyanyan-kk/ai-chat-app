@@ -38,6 +38,13 @@ def rerank_documents(
     # =========================
     # build pairs
     # =========================
+    """
+    输入模型的 sentence_pairs 长这个样子的：
+    [
+        ["Vue3 生命周期", "Vue3 生命周期包括 mounted"],
+        ["Vue3 生命周期", "Python 是解释型语言"],
+    ]
+    """
     sentence_pairs = [
 
         [query, doc["content"]]
@@ -46,8 +53,16 @@ def rerank_documents(
     ]
 
     # =========================
-    # predict
+    # predict 
+    # 让 rerank 模型给每一对：[query, content]打相关性分数。
     # =========================
+    """    
+    score 越高，相关性越强
+        scores = [
+            0.98,
+            0.02
+        ]
+    """
     scores = rerank_model.predict(
         sentence_pairs
     )
