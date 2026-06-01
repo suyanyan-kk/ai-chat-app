@@ -31,18 +31,21 @@ class BM25Service:
 
         for chunk in chunks:
 
+            meta = chunk.meta_info or {}
+
+            if meta.get(
+                "chunk_type"
+            ) != "child":
+
+                continue
+
             self.documents.append(
                 chunk.content
             )
 
-            self.metadatas.append({
-
-                "file_id": chunk.file_id,
-
-                "chunk_id": chunk.id,
-
-                "meta_info": chunk.meta_info,
-            })
+            self.metadatas.append(
+                meta
+            )
 
         db.close()
 

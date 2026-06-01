@@ -10,7 +10,7 @@ from app.core.exception import AppException
 from app.rag.retrieval.retrieval_service import retrieval_pipeline
 
 
-def stream_chat(session_id: str, user_input: str):
+def stream_chat(session_id: str, user_input: str): 
     logger.info(f"[聊天请求] session={session_id}, message={user_input}")
     if not user_input:
         raise AppException("消息不能为空")
@@ -21,7 +21,7 @@ def stream_chat(session_id: str, user_input: str):
         # RAG
         # =========================
         # rag_data = build_rag_context(user_input)
-        rag_data = retrieval_pipeline(user_input)
+        rag_data = retrieval_pipeline(user_input) 
 
         context = rag_data["context"]
         sources = rag_data["sources"]

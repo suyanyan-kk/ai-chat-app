@@ -68,8 +68,8 @@ class ChunkBuilder:
                     "file_type":
                         source_info["file_type"],
 
-                    # "page":
-                    #     source_info.get("page"),
+                    "page":
+                        source_info.get("page"),
 
                     "structure_index":
                         structure_index,
@@ -120,8 +120,8 @@ class ChunkBuilder:
                         "file_type":
                             source_info["file_type"],
 
-                        # "page":
-                        #     source_info.get("page"),
+                        "page":
+                            source_info.get("page"),
 
                         "structure_index":
                             structure_index,
@@ -150,7 +150,7 @@ class ChunkBuilder:
 
                     results.append(child_doc)
 
-        return results
+        return results 
 
 
 

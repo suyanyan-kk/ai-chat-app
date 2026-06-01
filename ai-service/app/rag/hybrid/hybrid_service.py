@@ -1,12 +1,12 @@
 from collections import defaultdict
 
 from app.rag.hybrid.bm25_service import (
-    bm25_service
+    bm25_service 
 )
 
 from app.rag.vectorstore.chroma_service import (
     vector_store
-)
+) 
 
 
 class HybridRetrievalService:
@@ -41,7 +41,8 @@ class HybridRetrievalService:
         )
 
         formatted_results = []
-
+        print("\n========== vector_results ==========\n")
+        print(results)  
         for item in results:
 
             metadata = item.metadata
@@ -69,13 +70,14 @@ class HybridRetrievalService:
             top_k=20
     ):
 
-        results = bm25_service.search(
+        results = bm25_service.search( 
 
             query=query,
 
             top_k=top_k
         )
-
+        print("\n========== bm25_results ==========\n")
+        print(results)
         for item in results:
 
             item["source"] = "bm25"
@@ -175,7 +177,7 @@ class HybridRetrievalService:
 
             f'{metadata.get("parent_id")}_'
 
-            f'{metadata.get("child_index")}'
+            # f'{metadata.get("child_index")}'
         )
 
     # =========================

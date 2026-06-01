@@ -7,15 +7,15 @@ from app.utils.splitters.splitter_factory import (
 )
 
 from app.utils.splitters.chunk_builder import (
-    ChunkBuilder
+    ChunkBuilder 
 )
 
 from app.rag.vectorstore.chroma_service import (
     save_chunks_to_chroma
-)
+) 
 
 
-def create_chunks(
+def create_chunks( 
         db,
         file_id,
         original_name,
@@ -49,7 +49,7 @@ def create_chunks(
     # =========================
     # builder
     # =========================
-    builder = ChunkBuilder(splitter)
+    builder = ChunkBuilder(splitter) 
 
     all_chunk_items = []
 

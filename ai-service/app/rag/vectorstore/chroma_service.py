@@ -1,10 +1,10 @@
 from langchain_chroma import Chroma
 
 from app.rag.embedding.embedding_service import (
-    embedding_model
+    embedding_model 
 )
 from app.utils.cleanMetadata  import  clean_metadata
-
+ 
 """
 Chroma 向量数据库服务
 
@@ -42,17 +42,24 @@ def save_chunks_to_chroma(chunks):
 
     for chunk in chunks: 
 
-        # 文本
-        texts.append(
-            chunk.content
-        )
+        
 
         # ⭐ 真正的 metadata
         print("原始类型 meta_info:",type(chunk.meta_info))
         print("原始 meta_info:", chunk.meta_info)
         metadata = chunk.meta_info or {}
+
         metadata = clean_metadata(metadata)
         print("清洗后 meta_info:", metadata)
+        if metadata.get(
+            "chunk_type"
+            ) != "child":
+
+         continue
+        # 文本
+        texts.append(
+            chunk.content
+        )
         # 再补充一些系统字段
         metadata.update({
             "chunk_id": chunk.id,

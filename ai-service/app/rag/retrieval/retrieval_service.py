@@ -1,14 +1,14 @@
 from collections import OrderedDict
 
 from app.rag.hybrid.hybrid_service import (
-    hybrid_retrieval_service
+    hybrid_retrieval_service 
 )
 
 from app.rag.rerank.rerank_service import (
     rerank_documents
 )
 
-from app.knowledgedb.db import (
+from app.knowledgedb.db import ( 
     SessionLocal
 )
 
@@ -18,30 +18,41 @@ from app.knowledgedb import models
 # =========================
 # parent retrieval
 # =========================
-def get_parent_chunk(
-        parent_id
-):
+def get_parent_chunk(parent_id):
 
     db = SessionLocal()
 
-    chunk = db.query(
+    chunks = db.query(
         models.KnowledgeChunk
-    ).filter(
+    ).all()
 
-        models.KnowledgeChunk.vector_id
-        == parent_id
+    for chunk in chunks:
 
-    ).first()
+        meta = chunk.meta_info or {}
+
+        if (
+
+            meta.get("chunk_type") == "parent"
+
+            and
+
+            meta.get("parent_id") == parent_id
+
+        ):
+
+            db.close()
+
+            return chunk
 
     db.close()
 
-    return chunk
+    return None
 
 
 # =========================
 # retrieval build_rag_context
 # =========================
-def retrieval_pipeline(
+def retrieval_pipeline( 
 
         query: str,
 
@@ -52,9 +63,9 @@ def retrieval_pipeline(
 
     # =========================
     # 1 hybrid retrieval
-    # =========================
+    # ========================= 
     hybrid_results = \
-        hybrid_retrieval_service.search(
+        hybrid_retrieval_service.search( 
 
             query=query,
 
@@ -119,7 +130,7 @@ def retrieval_pipeline(
     # 3 parent retrieval
     # =========================
     final_results = []
-
+    seen_parent_ids = set()
     for item in rerank_results:
 
         metadata = item["metadata"]
@@ -139,8 +150,16 @@ def retrieval_pipeline(
                 parent_id
             )
 
-            if parent_chunk:
+            if parent_id in seen_parent_ids:
+                continue 
 
+            seen_parent_ids.add(
+                parent_id
+            )
+            parent_chunk = get_parent_chunk(
+                parent_id
+            )
+            if parent_chunk:
                 final_results.append({
 
                     "content":
@@ -155,11 +174,22 @@ def retrieval_pipeline(
 
             else:
 
-                final_results.append(item)
+                parent_id = metadata.get(
+                    "parent_id"
+                )
 
-        else:
+                if parent_id in seen_parent_ids:
 
-            final_results.append(item)
+                    continue
+
+                seen_parent_ids.add(
+                    parent_id
+                )
+
+                final_results.append(
+                    item
+                )
+
 
     # =========================
     # 4 deduplicate
