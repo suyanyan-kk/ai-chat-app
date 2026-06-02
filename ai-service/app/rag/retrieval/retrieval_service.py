@@ -72,6 +72,7 @@ def retrieval_pipeline(
     print(f"Original Query: {analysis.original_query}")
     print(f"Rewritten Query: {analysis.rewritten_query}")
     print(f"Multi Queries: {analysis.multi_queries}")
+    
     print(f"Metadata Filter: {analysis.metadata_filter}") 
     # =========================
     # 1 hybrid retrieval

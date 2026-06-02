@@ -70,14 +70,17 @@ class HybridRetrievalService:
     def bm25_search(
             self,
             query,
-            top_k=20
+            top_k=20,
+            metadata_filter=None
     ):
 
         results = bm25_service.search( 
 
             query=query,
 
-            top_k=top_k
+            top_k=top_k,
+
+            metadata_filter=metadata_filter
         )
         print("\n========== bm25_results ==========\n")
         print(results)
@@ -209,7 +212,9 @@ class HybridRetrievalService:
 
             query=query,
 
-            top_k=top_k
+            top_k=top_k,
+
+            metadata_filter=metadata_filter
         )
         
 

@@ -88,7 +88,8 @@ class BM25Service:
     def search(
             self,
             query,
-            top_k=5
+            top_k=5,
+            metadata_filter=None
     ):
 
         if not self.bm25:
@@ -123,16 +124,29 @@ class BM25Service:
 
         for idx, score in enumerate(scores):
 
+            metadata = self.metadatas[idx]
+
+            if metadata_filter:
+
+                matched = True
+
+                for k, v in metadata_filter.items():
+
+                    if metadata.get(k) != v:
+
+                        matched = False
+                        break
+
+                if not matched:
+                    continue
+
             results.append({
 
-                "content":
-                    self.documents[idx],
+                "content":self.documents[idx],
 
-                "metadata":
-                    self.metadatas[idx],
+                "metadata": metadata,
 
-                "bm25_score":
-                    float(score)
+                "bm25_score":float(score)
             })
 
         results.sort(

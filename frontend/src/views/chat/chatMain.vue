@@ -72,6 +72,13 @@ const scrollToBottom = async () => {
     msgList.value.scrollTop = msgList.value.scrollHeight;
   }
 };
+// const createAIMessage = () => {
+
+//     return reactive({
+//         queue: [],
+//         isTyping: false
+//     })
+// }
 let queue = [];
 let isTyping = false;
 
@@ -182,7 +189,7 @@ const handleStream = async (value, aiMessage) => {
       // 最终结束
       // =========================
       if (msg.type === "end") {
-        aiMessage.content = msg.data.answer;
+        // aiMessage.content = msg.data.answer;
         aiMessage.sources = msg.data.sources|| [];
         aiMessage.loading = false
       }
