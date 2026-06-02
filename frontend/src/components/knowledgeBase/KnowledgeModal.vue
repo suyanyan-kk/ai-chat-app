@@ -51,7 +51,7 @@
       </div>
       <div class="footer">
         <n-button ghost @click="close" color="#fff">取消</n-button>
-        <n-button type="primary" @click="handleSubmit"> 确认 </n-button>
+        <n-button type="primary" @enter="handleSubmit" @click="handleSubmit"> 确认 </n-button>
       </div>
     </div>
   </n-modal>

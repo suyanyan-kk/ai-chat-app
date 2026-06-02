@@ -14,7 +14,16 @@ from app.knowledgedb.db import (
 
 from app.knowledgedb import models
 
+from app.rag.filter.metadata_filter import (
+    build_metadata_filter
+)
 
+from app.rag.rewrite.rewrite_service import (
+    rewrite_query
+)
+from app.rag.rewrite.multi_query_service import (
+    generate_multi_queries
+)
 # =========================
 # parent retrieval
 # =========================
@@ -60,43 +69,118 @@ def retrieval_pipeline(
 
         rerank_top_k: int = 5
 ):
+    # =========================
+    # query rewrite
+    # ========================= 
+    original_query = query
+
+    query = rewrite_query(query)
+
+    print("\n========== Query Rewrite ==========")
+
+    print("original:",original_query)
+
+    print("rewritten:",query)
+
+    print("===================================\n")
+
+    # =========================
+    # multi-query rewrite
+    # ========================= 
+    queries = generate_multi_queries(query)
+    
+    print("\n========== Multi Query ==========")
+
+    for q in queries:
+
+        print(q)
+
+        print("=================================\n")
+    # =========================
+    # 0 metadata filter
+    # ========================= 
+
+    db = SessionLocal()
+
+    metadata_filter = (
+        build_metadata_filter(
+                db,
+                query
+            )
+        )
+
+    db.close()
+
+    print("metadata_filter:",metadata_filter)
 
     # =========================
     # 1 hybrid retrieval
     # ========================= 
-    hybrid_results = \
-        hybrid_retrieval_service.search( 
+    all_results = []
+    # 多次检索，结果合并
+    for q in queries:
+        results = (
+            hybrid_retrieval_service.search( 
 
             query=query,
 
-            top_k=recall_k
+            top_k=recall_k,
+
+            metadata_filter=metadata_filter
+            )
         )
+        all_results.extend(
+        results
+    )
     print("\n========== hybrid_results ==========\n")
    
-    print(hybrid_results)
+    print(all_results)
     
     print(
         "\n========== Hybrid Recall ==========\n"
     )
 
-    for item in hybrid_results:
+    
+    # 去重 因为同一个 Chunk 会被召回很多次。
+    unique_results = {}
+    for item in all_results:
 
-        print(
-            item["content"][:100]
+        metadata = item["metadata"]
+
+        doc_id = (
+
+            metadata.get("file_id"),
+
+            metadata.get("parent_id"),
         )
 
-        print(
-            "rrf_score:",
-            item.get("rrf_score")
-        )
+        if doc_id not in unique_results:
 
-        print(
-            "source:",
-            item.get("source")
-        )
+            unique_results[doc_id] = item
 
-        print("\n----------------\n")
+    hybrid_results = list(
+        unique_results.values()
+    )
+    print("\n========== Unique Hybrid Results ==========\n")
+    print(hybrid_results)
 
+    # for item in hybrid_results:
+
+    #     print(
+    #         item["content"][:100]
+    #     )
+
+    #     print(
+    #         "rrf_score:",
+    #         item.get("rrf_score")
+    #     )
+
+    #     print(
+    #         "source:",
+    #         item.get("source")
+    #     )
+
+        # print("\n----------------\n")
     # =========================
     # 2 rerank
     # =========================
@@ -113,18 +197,18 @@ def retrieval_pipeline(
         "\n========== Rerank ==========\n"
     )
 
-    for item in rerank_results:
+    # for item in rerank_results:
 
-        print(
-            item["content"][:100]
-        )
+    #     print(
+    #         item["content"][:100]
+    #     )
 
-        print(
-            "rerank_score:",
-            item.get("rerank_score")
-        )
+    #     print(
+    #         "rerank_score:",
+    #         item.get("rerank_score")
+    #     )
 
-        print("\n----------------\n")
+    #     print("\n----------------\n")
 
     # =========================
     # 3 parent retrieval

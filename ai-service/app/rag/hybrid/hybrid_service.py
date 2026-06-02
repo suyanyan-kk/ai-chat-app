@@ -30,14 +30,17 @@ class HybridRetrievalService:
     def vector_search(
             self,
             query,
-            top_k=20
+            top_k=20,
+            metadata_filter=None
     ):
 
         results = vector_store.similarity_search(
 
             query=query,
 
-            k=top_k
+            k=top_k,
+            
+            filter=metadata_filter
         )
 
         formatted_results = []
@@ -186,7 +189,8 @@ class HybridRetrievalService:
     def search(
             self,
             query,
-            top_k=20
+            top_k=20,
+            metadata_filter=None,
     ):
 
         # vector
@@ -194,7 +198,9 @@ class HybridRetrievalService:
 
             query=query,
 
-            top_k=top_k
+            top_k=top_k,
+
+            metadata_filter=metadata_filter
         )
 
         # bm25

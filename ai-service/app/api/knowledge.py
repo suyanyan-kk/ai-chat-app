@@ -103,12 +103,19 @@ def delete_knowledge(id: int, db: Session = Depends(get_db)):
         ).all()
 
         # 获取 vector_id
-        vector_ids = [
-            str(chunk.vector_id)
-            for chunk in chunks
-            if chunk.vector_id
-        ]
+        vector_ids = []
 
+        for chunk in chunks:
+
+            meta = chunk.meta_info or {}
+
+            if meta.get("chunk_type") != "child":
+                continue
+
+            vector_ids.append(
+                str(chunk.vector_id)
+            )
+            
         # 删除 Chroma 向量
         if vector_ids:
 
