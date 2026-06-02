@@ -191,6 +191,7 @@ class HybridRetrievalService:
             query,
             top_k=20,
             metadata_filter=None,
+            debug=False
     ):
 
         # vector
@@ -210,6 +211,7 @@ class HybridRetrievalService:
 
             top_k=top_k
         )
+        
 
         # merge
         merged_results = \
@@ -219,8 +221,18 @@ class HybridRetrievalService:
 
                 bm25_results
             )
+        if debug:
 
-        return merged_results
+            return {
+
+                "vector_results": vector_results,
+
+                "bm25_results": bm25_results,
+
+                "all_recall_results": merged_results
+            }
+        else:
+            return merged_results
 
 
 hybrid_retrieval_service = \

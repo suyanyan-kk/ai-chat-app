@@ -3,7 +3,6 @@ from collections import OrderedDict
 from app.rag.hybrid.hybrid_service import (
     hybrid_retrieval_service 
 )
-
 from app.rag.rerank.rerank_service import (
     rerank_documents
 )
@@ -11,19 +10,10 @@ from app.rag.rerank.rerank_service import (
 from app.knowledgedb.db import ( 
     SessionLocal
 )
-
+from app.rag.query.query_analysis_service import (
+    analyze_query
+)
 from app.knowledgedb import models
-
-from app.rag.filter.metadata_filter import (
-    build_metadata_filter
-)
-
-from app.rag.rewrite.rewrite_service import (
-    rewrite_query
-)
-from app.rag.rewrite.multi_query_service import (
-    generate_multi_queries
-)
 # =========================
 # parent retrieval
 # =========================
@@ -69,64 +59,34 @@ def retrieval_pipeline(
 
         rerank_top_k: int = 5
 ):
-    # =========================
-    # query rewrite
-    # ========================= 
-    original_query = query
-
-    query = rewrite_query(query)
-
-    print("\n========== Query Rewrite ==========")
-
-    print("original:",original_query)
-
-    print("rewritten:",query)
-
-    print("===================================\n")
-
-    # =========================
-    # multi-query rewrite
-    # ========================= 
-    queries = generate_multi_queries(query)
-    
-    print("\n========== Multi Query ==========")
-
-    for q in queries:
-
-        print(q)
-
-        print("=================================\n")
-    # =========================
-    # 0 metadata filter
-    # ========================= 
-
+    # 分析查询
     db = SessionLocal()
 
-    metadata_filter = (
-        build_metadata_filter(
-                db,
-                query
-            )
-        )
+    analysis = analyze_query(
+        db,
+        query
+    )
 
     db.close()
-
-    print("metadata_filter:",metadata_filter)
-
+    print("\n========== Query Analysis ==========\n")   
+    print(f"Original Query: {analysis.original_query}")
+    print(f"Rewritten Query: {analysis.rewritten_query}")
+    print(f"Multi Queries: {analysis.multi_queries}")
+    print(f"Metadata Filter: {analysis.metadata_filter}") 
     # =========================
     # 1 hybrid retrieval
     # ========================= 
     all_results = []
     # 多次检索，结果合并
-    for q in queries:
+    for q in analysis.multi_queries:
         results = (
             hybrid_retrieval_service.search( 
 
-            query=query,
+            query=q,
 
             top_k=recall_k,
 
-            metadata_filter=metadata_filter
+            metadata_filter=analysis.metadata_filter
             )
         )
         all_results.extend(
@@ -163,24 +123,6 @@ def retrieval_pipeline(
     )
     print("\n========== Unique Hybrid Results ==========\n")
     print(hybrid_results)
-
-    # for item in hybrid_results:
-
-    #     print(
-    #         item["content"][:100]
-    #     )
-
-    #     print(
-    #         "rrf_score:",
-    #         item.get("rrf_score")
-    #     )
-
-    #     print(
-    #         "source:",
-    #         item.get("source")
-    #     )
-
-        # print("\n----------------\n")
     # =========================
     # 2 rerank
     # =========================
@@ -359,15 +301,6 @@ def retrieval_pipeline(
 
         "chunks": dedup_results
     }
-
-
-
-
-
-
-
-
-
 
 
 

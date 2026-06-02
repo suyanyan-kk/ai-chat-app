@@ -10,7 +10,7 @@ REWRITE_MAP = {
 
 }
 
-def rewrite_query(
+def rewrite_query( 
         query: str
 ):
 

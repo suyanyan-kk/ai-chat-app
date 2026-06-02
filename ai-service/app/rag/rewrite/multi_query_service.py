@@ -69,7 +69,7 @@ def generate_multi_queries(
             query + " Promise",
 
         ])
-
+ 
     return list(
         dict.fromkeys(queries)
     )

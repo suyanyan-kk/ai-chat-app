@@ -11,7 +11,7 @@
         placeholder="输入问题测试召回..."
         size="large"
         rounded
-        class="ask-input"
+        class="ask-input" 
       />
       <div class="btn-group">
            <!-- 检索调试 -->

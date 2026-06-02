@@ -54,6 +54,12 @@ const routes = [
   name: "chunkDebug",
   meta: { title: "切块调试" }
 },  
+ {
+  path: "/retrieval_debug",
+  component: () => import("@/views/retrieval_debug/index.vue"),
+  name: "retrievalDebug",
+  meta: { title: "检索调试" }
+}, 
   {
     path: '/langchain',
     name: 'langchainPractice',

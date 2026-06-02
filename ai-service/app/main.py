@@ -10,7 +10,7 @@ from app.core.exception import register_exception
 from app.core.logger import logger
 import uvicorn
 from app.api.chunk_debug import router as chunk_router
-
+from app.api.retrieval_debug import router as debug_router
 app = FastAPI()
 
 @app.middleware("http")
@@ -36,7 +36,7 @@ app.include_router(title_router)
 app.include_router(health_router)
 app.include_router(knowledge_router)
 app.include_router(chunk_router)
-
+app.include_router(debug_router)
 def dev():
     uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)
 logger.info("🚀 服务启动成功")
