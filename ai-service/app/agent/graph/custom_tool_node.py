@@ -1,4 +1,7 @@
+# app/agent/graph/custom_tool_node.py
+
 from langgraph.prebuilt import ToolNode
+
 import json
 import traceback
 
@@ -27,31 +30,52 @@ class CustomToolNode(ToolNode):
 
             for message in result["messages"]:
 
+                # Tool返回内容
+                content = message.content
+
+                # =========================
+                # 尝试解析 JSON
+                # =========================
                 try:
 
-                    data = json.loads(
-                        message.content
-                    )
+                    data = json.loads(content)
 
-                    if "sources" in data:
+                    # -------------------------
+                    # context
+                    # -------------------------
+                    if isinstance(data, dict):
 
-                        sources.extend(
-                            data["sources"]
-                        )
+                        if "context" in data:
 
-                        message.content = (
-                            data["context"]
-                        )
+                            message.content = (
+                                data["context"]
+                            )
 
-                except Exception as e:
+                        # -------------------------
+                        # sources
+                        # -------------------------
+                        if "sources" in data:
 
-                    print("json parse error:", e)
+                            sources.extend(
+                                data["sources"]
+                            )
+
+                except json.JSONDecodeError:
+
+                    # 普通字符串Tool
+                    # 例如天气、时间、计算器
+                    pass
 
             print("===== tool node end =====")
 
             return {
-                "messages": result["messages"],
-                "sources": sources
+
+                "messages":
+                    result["messages"],
+
+                "sources":
+                    sources
+
             }
 
         except Exception as e:
