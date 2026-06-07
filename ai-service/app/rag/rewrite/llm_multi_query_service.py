@@ -43,7 +43,7 @@ def generate_multi_queries_llm(
 
     try:
 
-        result = llm_chat(
+        result = llm_chat( 
             prompt
         )
 

@@ -11,5 +11,5 @@ model = ChatOpenAI(
     api_key=os.getenv("DEEPSEEK_API_KEY"),
     temperature=0.7,
     streaming=True,
-    max_tokens=100
+    max_tokens=2048
 )

@@ -182,17 +182,27 @@ const handleStream = async (value, aiMessage) => {
       // 流式输出
       // =========================
       if (msg.type === "stream") {
-        queue.push(msg.data)
+        // queue.push(msg.data)
+         queue.push(
+            msg.data.context ||
+            msg.data.answer ||
+          ""
+    )
         typeWriter(aiMessage)
       }
       // =========================
       // 最终结束
       // =========================
       if (msg.type === "end") {
-        // aiMessage.content = msg.data.answer;
-        aiMessage.sources = msg.data.sources|| [];
+        aiMessage.content = msg.data.content || msg.data.answer || aiMessage.content;
+
+        aiMessage.sources = msg.data.sources || []
+
         aiMessage.loading = false
+
+        console.log("最终内容", aiMessage.content)
       }
+
     }
   )
 }

@@ -31,7 +31,7 @@ def rewrite_query_llm(
 
 5 只返回改写后的问题
 
-用户问题：
+用户问题： 
 
 {query}
 """

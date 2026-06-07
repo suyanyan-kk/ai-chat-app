@@ -63,7 +63,10 @@ def analyze_query(
                 original_query
             )
         )
-
+        print(
+            "LLM Rewrite Result:",
+            rewritten_query
+        )
     else:
 
         rewritten_query = (
@@ -83,7 +86,10 @@ def analyze_query(
                 rewritten_query
             )
         )
-
+        print(
+            "LLM Multi-Query Result:",
+            multi_queries
+        )
     else:
 
         multi_queries = (
