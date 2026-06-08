@@ -7,11 +7,7 @@
 
     <div class="chat-body">
       <div class="msg-list" ref="msgList">
-          <ChatMessage
-            v-for="(msg) in chatStore.currentMessages"
-            :key="msg.id"
-            :msg="msg"
-          />
+        <ChatMessage v-for="msg in chatStore.currentMessages" :key="msg.id" :msg="msg" />
       </div>
 
       <div class="chat-input">
@@ -27,7 +23,7 @@
         />
 
         <n-button type="primary" @click="sendMessage"> 发送 </n-button>
-        <button class="new-btn" @click="handleNewSession"> + 新建会话</button>
+        <button class="new-btn" @click="handleNewSession">+ 新建会话</button>
       </div>
     </div>
     <n-alert title="Warning 类型" type="warning" v-show="isWarningVisible">
@@ -39,32 +35,31 @@
 <script setup>
 import { ref, nextTick, onMounted, reactive, watch } from "vue";
 import { chatStream, generateTitle } from "@/api";
-import ChatMessage from '@/components/chat/ChatMessage.vue'
+import ChatMessage from "@/components/chat/ChatMessage.vue";
 import { useChatStore } from "@/stores/modules/chatStore";
 import { useUIStore } from "@/stores/modules/uiStore";
-import { storeToRefs } from 'pinia';
-const chatStore = useChatStore()
-const uiStore = useUIStore()
-const { isWarningVisible } = storeToRefs(uiStore)
-const messages = ref([{ 
-  // type: "markdown",
-  // isUser: false,
-  // role: "AI",
-  // content: "你好",
-  // time: Date.now(),
-  // loading: false,
-  //  id: Date.now() + Math.random(), // ⭐ 唯一ID
-  //  messageIndex:0 // ⭐ 命中的消息位置
-
-
- }]);
-
+import { storeToRefs } from "pinia";
+const chatStore = useChatStore();
+const uiStore = useUIStore();
+const { isWarningVisible } = storeToRefs(uiStore);
+const messages = ref([
+  {
+    // type: "markdown",
+    // isUser: false,
+    // role: "AI",
+    // content: "你好",
+    // time: Date.now(),
+    // loading: false,
+    //  id: Date.now() + Math.random(), // ⭐ 唯一ID
+    //  messageIndex:0 // ⭐ 命中的消息位置
+  },
+]);
 
 const newMessage = ref("");
 const msgList = ref(null);
 // 初始化一个会话（第一次进入）
 if (!chatStore.currentSessionId) {
-  chatStore.createSession()
+  chatStore.createSession();
 }
 const scrollToBottom = async () => {
   await nextTick();
@@ -90,7 +85,7 @@ const typeWriter = async (target) => {
     const text = queue.shift();
 
     for (let char of text) {
-      target.content += char;  
+      target.content += char;
       smartScroll();
       await new Promise((r) => setTimeout(r, 10 + Math.random() * 80));
     }
@@ -109,32 +104,33 @@ const smartScroll = () => {
 };
 // 1️⃣ 主函数
 const sendMessage = async () => {
-  const value = newMessage.value.trim()
-  if (!value) return
+  const value = newMessage.value.trim();
+  if (!value) return;
 
   if (value.length > 2000) {
-    uiStore.showWarning()
-    return
+    uiStore.showWarning();
+    return;
   }
- // ⭐ 是否是新会话（关键判断）
- const session = chatStore.getCurrentSession()
- const isFirstMessage = chatStore.currentMessages.length === 1 && session?.messages[0]?.role === "AI" 
- await handleUserMessage(value)
-// ⭐ AI消息先插入一个空的
-  const aiMessage = createAIMessage()
+  // ⭐ 是否是新会话（关键判断）
+  const session = chatStore.getCurrentSession();
+  const isFirstMessage =
+    chatStore.currentMessages.length === 1 && session?.messages[0]?.role === "AI";
+  await handleUserMessage(value);
+  // ⭐ AI消息先插入一个空的
+  const aiMessage = createAIMessage();
 
   try {
-    await handleStream(value, aiMessage)
+    await handleStream(value, aiMessage);
   } catch (error) {
-    aiMessage.content = "抱歉，获取回复失败"
+    aiMessage.content = "抱歉，获取回复失败";
   } finally {
-    aiMessage.loading = false
-    await nextTick()
+    aiMessage.loading = false;
+    await nextTick();
     if (isFirstMessage) {
-     await handleTitle(value)
+      await handleTitle(value);
     }
   }
-}
+};
 // 2️⃣ 用户消息
 const handleUserMessage = async (value) => {
   chatStore.addUserMessage({
@@ -144,12 +140,12 @@ const handleUserMessage = async (value) => {
     content: value,
     time: Date.now(),
     id: Date.now() + Math.random(), // ⭐ 唯一ID
-    messageIndex: chatStore.getNextMessageIndex() // ⭐ 命中的消息位置
-  })
+    messageIndex: chatStore.getNextMessageIndex(), // ⭐ 命中的消息位置
+  });
 
-  newMessage.value = ""
-  await scrollToBottom()
-}
+  newMessage.value = "";
+  await scrollToBottom();
+};
 // 3️⃣ AI占位消息
 const createAIMessage = () => {
   const aiMessage = reactive({
@@ -162,20 +158,20 @@ const createAIMessage = () => {
     sources: [],
     time: Date.now(),
     id: Date.now() + Math.random(), // ⭐ 唯一ID
-    messageIndex: chatStore.getNextMessageIndex() // ⭐ 命中的消息位置
-  })
+    messageIndex: chatStore.getNextMessageIndex(), // ⭐ 命中的消息位置
+  });
 
-  chatStore.addAIMessage(aiMessage)
-  scrollToBottom()
+  chatStore.addAIMessage(aiMessage);
+  scrollToBottom();
 
-  return aiMessage
-}
+  return aiMessage;
+};
 // 4️⃣ 流式处理
 const handleStream = async (value, aiMessage) => {
   await chatStream(
     {
       session_id: chatStore.currentSessionId,
-      message: value
+      message: value,
     },
     (msg) => {
       // =========================
@@ -183,12 +179,8 @@ const handleStream = async (value, aiMessage) => {
       // =========================
       if (msg.type === "stream") {
         // queue.push(msg.data)
-         queue.push(
-            msg.data.context ||
-            msg.data.answer ||
-          ""
-    )
-        typeWriter(aiMessage)
+        queue.push(msg.data.context || msg.data.answer || "");
+        typeWriter(aiMessage);
       }
       // =========================
       // 最终结束
@@ -196,37 +188,37 @@ const handleStream = async (value, aiMessage) => {
       if (msg.type === "end") {
         aiMessage.content = msg.data.content || msg.data.answer || aiMessage.content;
 
-        aiMessage.sources = msg.data.sources || []
+        aiMessage.sources = msg.data.sources || [];
 
-        aiMessage.loading = false
+        aiMessage.loading = false;
 
-        console.log("最终内容", aiMessage.content)
+        console.log("最终内容", aiMessage.content);
       }
-
     }
-  )
-}
+  );
+};
 // 5️⃣ 标题生成
 const handleTitle = async (value) => {
   try {
-    const res = await generateTitle(value)
+    const res = await generateTitle(value);
 
-    chatStore.updateSessionTitle(
-      chatStore.currentSessionId,
-      res.title
-    )
+    chatStore.updateSessionTitle(chatStore.currentSessionId, res.title);
   } catch (e) {
-    console.log("生成标题失败")
+    console.log("生成标题失败");
   }
-}
+};
 // 新建会话
 const handleNewSession = () => {
   chatStore.createSession();
 };
 // 监听会话数据变化，自动保存到 localStorage
-watch(chatStore.sessions, () => {
-  localStorage.setItem("sessions", JSON.stringify(chatStore.sessions))
-}, { deep: true })
+watch(
+  chatStore.sessions,
+  () => {
+    localStorage.setItem("sessions", JSON.stringify(chatStore.sessions));
+  },
+  { deep: true }
+);
 onMounted(() => {
   document.addEventListener("click", (e) => {
     if (e.target.classList.contains("copy-btn")) {
@@ -245,7 +237,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-
 .chat-page {
   display: flex;
   flex-direction: column;
@@ -329,7 +320,8 @@ onMounted(() => {
   box-shadow: 0 0 0 2px rgba(130, 118, 255, 0.24);
 }
 
-.chat-input button,.new-btn {
+.chat-input button,
+.new-btn {
   width: 80px;
   height: 100%;
   padding: 0px 10px;
@@ -374,5 +366,4 @@ onMounted(() => {
 .msg :deep(h3) {
   margin: 10px 0 6px;
 }
-
 </style>

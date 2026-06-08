@@ -229,7 +229,7 @@ def retrieval_pipeline(
                 item["content"],
                 item
             )
-
+ 
             for item in final_results
 
         ).values()
@@ -293,7 +293,7 @@ def retrieval_pipeline(
     context = "\n\n".join(
         context_list
     )
-
+ 
     return {
 
         "context": context,
