@@ -1,22 +1,20 @@
 # app/agent/workflow/rag_state.py
 
-from typing import TypedDict
-
-
+from typing import TypedDict, List, Dict, Any
 class RAGState(TypedDict):
 
     query: str
 
-    analysis: object
+    analysis: Dict[str, Any]
 
-    hybrid_results: list
+    hybrid_results: List[Dict]
 
-    rerank_results: list
+    rerank_results: List[Dict]
 
-    final_results: list
+    final_results: List[Dict]
 
     context: str
 
-    sources: list
+    sources: List[Dict]
 
-    chunks: list
+    chunks: List[Dict]

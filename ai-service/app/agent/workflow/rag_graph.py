@@ -27,7 +27,7 @@ from app.agent.workflow.nodes.parent_chunk_node import (
 )
 
 from app.agent.workflow.nodes.context_node import (
-    context_node
+    build_context_node
 )
 
 
@@ -57,7 +57,7 @@ builder.add_node(
 
 builder.add_node(
     "answer_generation",
-    context_node
+    build_context_node
 )
 
 builder.add_edge(

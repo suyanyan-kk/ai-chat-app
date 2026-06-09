@@ -3,7 +3,7 @@
 from collections import OrderedDict
 
 
-def context_node(state):
+def build_context_node(state):
 
     dedup_results = list(
 
