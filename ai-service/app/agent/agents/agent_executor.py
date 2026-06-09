@@ -5,7 +5,7 @@ from langchain.agents import (
 
 from app.llm.model import model
 
-from app.agent.prompts.agent_prompt import (
+from app.agent.agents.agent_prompt import (
     agent_prompt 
 )
 

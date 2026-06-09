@@ -3,7 +3,9 @@
 from app.rag.retrieval.retrieval_service import (
     get_parent_chunk
 )
+from langsmith import traceable
 
+@traceable(name="parent_chunk")
 
 def parent_chunk_node(state):
 
@@ -53,7 +55,7 @@ def parent_chunk_node(state):
 
     return {
 
-        "final_results":
+        "parent_results":
             final_results
 
     }

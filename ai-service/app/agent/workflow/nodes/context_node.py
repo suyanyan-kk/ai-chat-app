@@ -2,7 +2,9 @@
 
 from collections import OrderedDict
 
+from langsmith import traceable
 
+@traceable(name="build_context")
 def build_context_node(state):
 
     dedup_results = list(
@@ -14,7 +16,7 @@ def build_context_node(state):
                 item
             )
 
-            for item in state["final_results"]
+            for item in state["parent_results"]
 
         ).values()
     )

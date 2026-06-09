@@ -7,7 +7,7 @@ from langchain_core.messages import (
 from app.agent.graph.agent_graph import (
     graph
 )
-
+ 
 
 def agent_chat(
         query,
@@ -15,15 +15,22 @@ def agent_chat(
 ):
     print("===== agent start =====")
     result = graph.invoke(
-        {
-            "messages": [
-                HumanMessage(
-                    content=query
-                )
-            ],
-            "sources": []
+
+    {
+        "messages": [
+            HumanMessage(
+                content=query
+            )
+        ],
+        "sources": []
+    },
+
+    config={
+        "configurable": {
+            "thread_id": history
         }
-    )
+    }
+)
 
     print("===== graph result =====")
     print(result)
