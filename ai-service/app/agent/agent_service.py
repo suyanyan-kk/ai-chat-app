@@ -11,7 +11,7 @@ from app.agent.graph.agent_graph import (
 
 def agent_chat(
         query,
-        history=""
+        session_id
 ):
     print("===== agent start =====")
     result = graph.invoke(
@@ -27,7 +27,7 @@ def agent_chat(
 
     config={
         "configurable": {
-            "thread_id": history
+            "thread_id": session_id
         }
     }
 )

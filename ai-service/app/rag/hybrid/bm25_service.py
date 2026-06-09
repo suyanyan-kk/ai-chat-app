@@ -1,5 +1,5 @@
 from rank_bm25 import BM25Okapi
-
+import jieba
 from app.knowledgedb.db import SessionLocal
 
 from app.knowledgedb import models
@@ -57,8 +57,8 @@ class BM25Service:
         tokenized_docs = [
             # 默认按空格切割字符串。你可以根据需要使用更复杂的分词器。
             # BM25Okapi 不懂句子，只懂单词，所以需要先把文档切分成单词列表。
-            doc.split() 
-
+            # doc.split()  #对中文失效，后续可以改成结巴分词或者其他中文分词工具
+                list(jieba.cut(doc))
             for doc in self.documents
         ]
         # 创建 BM25 检索器。
@@ -96,7 +96,7 @@ class BM25Service:
 
             self.initialize()
         # 分词
-        tokenized_query = query.split()
+        tokenized_query = list(jieba.cut(query))
         # 打分
         """BM25Okapi 的 get_scores 方法会计算查询与每个文档的相关性分数。
         

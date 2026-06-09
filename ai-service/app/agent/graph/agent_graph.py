@@ -10,7 +10,9 @@ from app.agent.graph.custom_tool_node import (
 from app.agent.graph.state import (
     AgentState
 )
-
+from langgraph.checkpoint.memory import (
+    MemorySaver
+)
 from app.agent.graph.agent_node import (
     agent_node,
     tools 
@@ -19,7 +21,7 @@ from app.agent.graph.agent_node import (
 builder = StateGraph(
     AgentState
 )
-
+memory = MemorySaver()
 builder.add_node(
     "agent",
     agent_node
@@ -66,4 +68,6 @@ builder.add_edge(
     "tools",
     "agent"
 )
-graph = builder.compile()
+graph = builder.compile(
+    checkpointer=memory
+)
