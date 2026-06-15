@@ -1,67 +1,184 @@
 import json
-from ..chains import chat_chain
-from ..prompts import chat_prompt
-from app.utils.message import create_message
-from ..model import model
+
 from app.core.logger import logger
 from app.core.exception import AppException
- 
-# from app.rag.retrieval.retrieval_service import build_rag_context
-from app.rag.retrieval.retrieval_service import retrieval_pipeline
-from app.agent.agent_service import agent_chat
 
+from app.agent.agent_service import (
+    agent_chat_event_stream
+)
+from app.stream.router.event_router import (
+    route_event
+)
+async def stream_chat(
+    session_id: str,
+    user_input: str
+):
+    async for event in agent_chat_event_stream(
+                                    user_input,
+                                    session_id
+                    ):
 
-def stream_chat(session_id: str, user_input: str):
-    logger.info(f"[聊天请求] session={session_id}, message={user_input}")
-    if not user_input:
-        raise AppException("消息不能为空")
-    try:
+        print("\n===== chat event =====")
+        print(event)
 
-        # start   
-        yield json.dumps({"type": "start", "data": {}}) + "\n"
+    response = route_event(event)
 
-        result = agent_chat(
-                    user_input,
-                    session_id
-                )
-        context = result["answer"]
-        sources = result["sources"]
-        # stream
-        yield json.dumps(
-            {"type": "stream", "data": {"context": context, "sources": sources}},
-            ensure_ascii=False,
-        ) + "\n"
+    if response:
 
-        # end
-        yield json.dumps(
-            {"type": "end", "data": {"context": context, "sources": sources}},
-            ensure_ascii=False,
-        ) + "\n"
-  
-    except Exception as e:
-        logger.error(f"[LLM错误] {str(e)}")
-        raise
+        yield response
+    # logger.info(
+    #     f"[聊天请求] session={session_id}, message={user_input}"
+    # )
 
+    # if not user_input:
+    #     raise AppException("消息不能为空")
+    # async for event in agent_chat_event_stream(
+    #         user_input,
+    #         session_id
+    #     ):
 
+    #         print("\n===== chat event =====")
+    #         print(event)
+    #         parsed = parse_event(event)
 
+    #         if parsed is None:
+    #             continue
 
+    #         print(parsed)
+    #         yield (
+    #         json.dumps(
+    #             event,
+    #             ensure_ascii=False
+    #         )
+    #         + "\n"
+    #     )
+    # try:
 
+    #     # =========================
+    #     # start
+    #     # =========================
+    #     yield json.dumps(
+    #         {
+    #             "type": "start",
+    #             "data": {}
+    #         },
+    #         ensure_ascii=False
+    #     ) + "\n"
 
-        # =========================
-        # RAG
-        # =========================
-        # 1、
-        # rag_data = build_rag_context(user_input)
-        # 2、
-        # rag_data = retrieval_pipeline(user_input)
+    #     final_answer = ""
 
-        # context = rag_data["context"]
-        # sources = rag_data["sources"]
-        # # =========================
-        # # prompt
-        # # =========================
-        # messages = chat_prompt.invoke(
-        #     {"input": user_input, "history": history, "context": context}
-        # )
-        # 3、
-        # full_response = ""
+    #     sources = []
+
+    #     # =========================
+    #     # graph stream
+    #     # =========================
+    #     async for event in agent_chat_event_stream(
+    #         user_input,
+    #         session_id
+    #     ):
+
+    #         print("\n===== chat event =====")
+    #         print(event)
+
+    #         # =====================================
+    #         # Agent Node
+    #         # =====================================
+    #         if "agent" in event:
+
+    #             node_data = event["agent"]
+
+    #             # sources
+    #             if "sources" in node_data:
+
+    #                 sources = node_data.get(
+    #                     "sources",
+    #                     sources
+    #                 )
+
+    #             # messages
+    #             messages = node_data.get(
+    #                 "messages",
+    #                 []
+    #             )
+
+    #             if messages:
+
+    #                 last_message = messages[-1]
+
+    #                 if hasattr(
+    #                     last_message,
+    #                     "content"
+    #                 ):
+
+    #                     final_answer = (
+    #                         last_message.content
+    #                     )
+
+    #                     yield json.dumps(
+    #                         {
+    #                             "type": "stream",
+    #                             "data": {
+    #                                 "context":
+    #                                     final_answer,
+    #                                 "sources":
+    #                                     sources
+    #                             }
+    #                         },
+    #                         ensure_ascii=False
+    #                     ) + "\n"
+
+    #         # =====================================
+    #         # Tool Node
+    #         # =====================================
+    #         if "tools" in event:
+
+    #             tool_data = event["tools"]
+
+    #             # 关键：
+    #             # 保留知识库引用来源
+    #             sources = tool_data.get(
+    #                 "sources",
+    #                 sources
+    #             )
+
+    #             yield json.dumps(
+    #                 {
+    #                     "type": "tool",
+    #                     "data": {
+    #                         "sources": sources
+    #                     }
+    #                 },
+    #                 ensure_ascii=False
+    #             ) + "\n"
+
+    #     # =========================
+    #     # end
+    #     # =========================
+    #     yield json.dumps(
+    #         {
+    #             "type": "end",
+    #             "data": {
+    #                 "context": final_answer,
+    #                 "sources": sources
+    #             }
+    #         },
+    #         ensure_ascii=False
+    #     ) + "\n"
+
+    # except Exception as e:
+
+    #     logger.error(
+    #         f"[LLM错误] {str(e)}"
+    #     )
+
+    #     yield json.dumps(
+    #         {
+    #             "type": "error",
+    #             "data": {
+    #                 "message": str(e)
+    #             }
+    #         },
+    #         ensure_ascii=False
+    #     ) + "\n"
+
+    #     raise

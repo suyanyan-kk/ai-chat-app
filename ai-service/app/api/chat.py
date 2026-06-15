@@ -8,14 +8,14 @@ router = APIRouter()
 
 # 流式
 @router.post("/chat-stream") 
-def chat_stream(req: ChatRequest):
+async def chat_stream(req: ChatRequest):
     answer = stream_chat(
         req.session_id,
         req.message
     )
     return StreamingResponse(
         answer,
-        media_type="text/plain"
+        media_type="text/event-stream"
     )
 
 # 普通
