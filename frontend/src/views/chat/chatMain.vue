@@ -67,32 +67,27 @@ const scrollToBottom = async () => {
     msgList.value.scrollTop = msgList.value.scrollHeight;
   }
 };
-// const createAIMessage = () => {
 
-//     return reactive({
-//         queue: [],
-//         isTyping: false
-//     })
-// }
 let queue = [];
 let isTyping = false;
 
-const typeWriter = async (target) => {
-  if (isTyping) return;
-  isTyping = true;
+// const typeWriter = async (target) => {
+//   if (isTyping) return;
+//   isTyping = true;
 
-  while (queue.length > 0) {
-    const text = queue.shift();
+//   while (queue.length > 0) {
+//     const text = queue.shift();
+//     console.log("queue item =", text);
+//     console.log(typeof text);
+//     for (let char of text) {
+//       target.content += char;
+//       smartScroll();
+//       await new Promise((r) => setTimeout(r, 10 + Math.random() * 80));
+//     }
+//   }
 
-    for (let char of text) {
-      target.content += char;
-      smartScroll();
-      await new Promise((r) => setTimeout(r, 10 + Math.random() * 80));
-    }
-  }
-
-  isTyping = false;
-};
+//   isTyping = false;
+// };
 let lastScroll = Date.now();
 // ⭐ 优化滚动频率，避免每个字符都触发滚动导致性能问题
 const smartScroll = () => {
@@ -104,33 +99,46 @@ const smartScroll = () => {
 };
 // 1️⃣ 主函数
 const sendMessage = async () => {
-  const value = newMessage.value.trim();
-  if (!value) return;
 
-  if (value.length > 2000) {
-    uiStore.showWarning();
-    return;
-  }
-  // ⭐ 是否是新会话（关键判断）
-  const session = chatStore.getCurrentSession();
-  const isFirstMessage =
-    chatStore.currentMessages.length === 1 && session?.messages[0]?.role === "AI";
-  await handleUserMessage(value);
-  // ⭐ AI消息先插入一个空的
-  const aiMessage = createAIMessage();
+    const value = newMessage.value.trim()
 
-  try {
-    await handleStream(value, aiMessage);
-  } catch (error) {
-    aiMessage.content = "抱歉，获取回复失败";
-  } finally {
-    aiMessage.loading = false;
-    await nextTick();
-    if (isFirstMessage) {
-      await handleTitle(value);
-    }
-  }
-};
+    if (!value) return
+
+    await handleUserMessage(value)
+
+    createAIMessage()
+
+    await handleStream(value)
+
+}
+// const sendMessage = async () => {
+//   const value = newMessage.value.trim();
+//   if (!value) return;
+
+//   if (value.length > 2000) {
+//     uiStore.showWarning();
+//     return;
+//   }
+//   // ⭐ 是否是新会话（关键判断）
+//   const session = chatStore.getCurrentSession();
+//   const isFirstMessage =
+//     chatStore.currentMessages.length === 1 && session?.messages[0]?.role === "AI";
+//   await handleUserMessage(value);
+//   // ⭐ AI消息先插入一个空的
+//   const aiMessage = createAIMessage();
+
+//   try {
+//     await handleStream(value, aiMessage);
+//   } catch (error) {
+//     aiMessage.content = "抱歉，获取回复失败";
+//   } finally {
+//     aiMessage.loading = false;
+//     await nextTick();
+//     if (isFirstMessage) {
+//       await handleTitle(value);
+//     }
+//   }
+// };
 // 2️⃣ 用户消息
 const handleUserMessage = async (value) => {
   chatStore.addUserMessage({
@@ -148,55 +156,191 @@ const handleUserMessage = async (value) => {
 };
 // 3️⃣ AI占位消息
 const createAIMessage = () => {
+
   const aiMessage = reactive({
+
     type: "markdown",
+
     content: "",
+
     isUser: false,
+
     role: "AI",
+
     loading: true,
-    // ⭐ 来源引用
+
+    status: "thinking",
+
+    runningTool: null,
+
     sources: [],
+
+    tools: [],
+
     time: Date.now(),
-    id: Date.now() + Math.random(), // ⭐ 唯一ID
-    messageIndex: chatStore.getNextMessageIndex(), // ⭐ 命中的消息位置
-  });
 
-  chatStore.addAIMessage(aiMessage);
-  scrollToBottom();
+    id: Date.now() + Math.random(),
 
-  return aiMessage;
-};
+    messageIndex: chatStore.getNextMessageIndex(),
+
+  })
+
+  chatStore.addAIMessage(aiMessage)
+
+  scrollToBottom()
+
+  return aiMessage
+
+}
 // 4️⃣ 流式处理
-const handleStream = async (value, aiMessage) => {
+const handleStream = async (value) => {
+
   await chatStream(
+
     {
+
       session_id: chatStore.currentSessionId,
-      message: value,
+
+      message: value
+
     },
+
     (msg) => {
-      // =========================
-      // 流式输出
-      // =========================
-      if (msg.type === "stream") {
-        // queue.push(msg.data)
-        queue.push(msg.data.context || msg.data.answer || "");
-        typeWriter(aiMessage);
+
+      console.log("stream event", msg)
+
+      switch (msg.type) {
+
+        // =====================
+        // Token
+        // =====================
+        case "stream":
+
+          chatStore.updateAIMessage({
+
+            type: "token",
+
+            content: msg.data.answer
+
+          })
+
+          break
+
+        // =====================
+        // Tool
+        // =====================
+        case "tool_start":
+
+          chatStore.updateAIMessage(msg)
+
+          break
+
+        case "tool_end":
+
+          chatStore.updateAIMessage(msg)
+
+          break
+
+        // =====================
+        // Sources
+        // =====================
+        case "sources":
+
+          chatStore.updateAIMessage(msg)
+
+          break
+
+        // =====================
+        // Graph
+        // =====================
+        case "start":
+
+          chatStore.updateAIMessage({
+
+            type: "graph_start"
+
+          })
+
+          break
+
+        case "end":
+
+          chatStore.finishAIMessage(msg.data)
+
+          break
       }
-      // =========================
-      // 最终结束
-      // =========================
-      if (msg.type === "end") {
-        aiMessage.content = msg.data.content || msg.data.answer || aiMessage.content;
 
-        aiMessage.sources = msg.data.sources || [];
-
-        aiMessage.loading = false;
-
-        console.log("最终内容", aiMessage.content);
-      }
     }
-  );
-};
+
+  )
+
+}
+// const handleStream = async (value, aiMessage) => {
+//   await chatStream(
+//     {
+//       session_id: chatStore.currentSessionId,
+//       message: value,
+//     },
+//     (msg) => {
+//       // =========================
+//       // 流式输出
+//       // =========================
+//       switch (msg.type) {
+//         case "start":
+//           break;
+
+//         case "graph_start":
+//           aiMessage.status = "开始思考...";
+//           break;
+
+//         case "llm_start":
+//           aiMessage.status = "分析问题...";
+//           break;
+
+//         case "stream":
+//           console.log("stream msg =", msg);
+//           const token = msg.data?.answer ?? msg.data.answer ?? "";
+//           if (token) {
+//             queue.push(token);
+
+//             typeWriter(aiMessage);
+//           }
+
+//           break;
+
+//         case "tool_start":
+//           aiMessage.runningTool = msg.data.tool;
+
+//           aiMessage.status = `调用工具：${msg.data.tool}`;
+
+//           break;
+
+//         case "tool_end":
+//           aiMessage.runningTool = null;
+
+//           aiMessage.tools.push({
+//             name: msg.data.tool,
+
+//             result: msg.data.result,
+//           });
+
+//           break;
+
+//         case "sources":
+//           aiMessage.sources = msg.data.sources;
+
+//           break;
+
+//         case "graph_end":
+//           aiMessage.status = "完成";
+
+//           aiMessage.loading = false;
+
+//           break;
+//       }
+//     }
+//   );
+// };
 // 5️⃣ 标题生成
 const handleTitle = async (value) => {
   try {

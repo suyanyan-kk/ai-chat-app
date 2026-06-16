@@ -22,24 +22,50 @@ def parse_graph_event(event: dict) -> str | None:
 
     # Graph 开始
     if event_name == "on_chain_start":
-        print("===== graph start =====")
-        print(event)
-        return json.dumps(
-            {
+        print("===== graph start parser=====")
+        return {
                 "type": "graph_start"
-            },
-            ensure_ascii=False
-        ) + "\n"
+            }
+    
+    if event_name == "on_chain_stream":
 
+        chunk = event.get(
+            "data",
+            {}
+        ).get(
+            "chunk",
+            {}
+        )
+        print("===== graph stream parser=====")
+        print(event)
+        print(chunk.get("sources",[]))
+        print(chunk.get("messages",[]))
+        return {
+
+            "type": "graph_state",
+
+            "messages":
+                chunk.get(
+                    "messages",
+                    []
+                ),
+
+            "sources":
+                chunk.get(
+                    "sources",
+                    []
+                )
+
+            }
+    
     # Graph 结束
     if event_name == "on_chain_end":
-        print("===== graph end =====")
+        print("===== graph end parser=====")
         print(event)
-        return json.dumps(
-            {
-                "type": "graph_end"
-            },
-            ensure_ascii=False
-        ) + "\n"
+        return {
+
+            "type": "graph_end"
+
+        }
 
     return None

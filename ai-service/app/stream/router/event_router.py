@@ -7,8 +7,12 @@ from app.stream.parser.graph_parser import (
 from app.stream.parser.chat_parser import (
     parse_chat_event
 )
-
-
+from app.stream.parser.tool_parser import (
+    parse_tool_event
+)
+from app.stream.parser.state_parser import (
+    parse_state_event
+)
 def route_event(event):
     """
     Event Router
@@ -23,7 +27,7 @@ def route_event(event):
         "event",
         ""
     )
-    print("\n==== Event Router======")
+    print("\n==== Event Router start 开始判断走哪个parser ======")
     print(event_name)
     # ==========================
     # Graph
@@ -54,42 +58,9 @@ def route_event(event):
         "on_tool"
     ):
 
-        return None
+        return parse_tool_event(
+            event
+        )
 
     return None
 
-
-# 先不要处理 Token。
-# 先只处理 Graph 生命周期。
-# def route_event(event):
-#     """
-#     LangGraph Event
-#             ↓
-#     Frontend JSON
-#     """
-
-#     event_name = event.get("event")
-
-#     # =========================
-#     # Graph Start
-#     # =========================
-#     if event_name == "on_chain_start":
-
-#         return json.dumps({
-
-#             "type": "graph_start"
-
-#         }, ensure_ascii=False) + "\n"
-
-#     # =========================
-#     # Graph End
-#     # =========================
-#     if event_name == "on_chain_end":
-
-#         return json.dumps({
-
-#             "type": "graph_end"
-
-#         }, ensure_ascii=False) + "\n"
-
-#     return None

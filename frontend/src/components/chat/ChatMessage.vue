@@ -19,14 +19,26 @@
         <!-- 打字光标 -->
         <span v-if="msg.loading" class="cursor"> ▌ </span>
       </n-card>
+      <!-- Thinking -->
 
+      <Thinking :show="msg.status === 'thinking'" />
+      <!-- Tool -->
+
+      <ToolStatus :tool="msg.runningTool" />
+      <!-- Sources -->
+
+      <SourceList :sources="msg.sources" />
       <!-- ========================= -->
       <!-- 来源引用 -->
       <!-- ========================= -->
       <div v-for="(fileSource, index) in msg.sources" :key="index" class="source-item">
         <div class="source-file" @click="openReference(fileSource)">
-        📄 {{ fileSource.file_name || '未知文件' }}
-          <span v-if="formatSource(fileSource)" class="source-meta" style="font-size: 12px; opacity: 0.6; margin-left: 6px;">
+          📄 {{ fileSource.file_name || "未知文件" }}
+          <span
+            v-if="formatSource(fileSource)"
+            class="source-meta"
+            style="font-size: 12px; opacity: 0.6; margin-left: 6px"
+          >
             {{ formatSource(fileSource) }}
           </span>
         </div>
@@ -42,7 +54,10 @@
 import { computed } from "vue";
 import { renderMarkdown } from "@/markdown";
 import { NCard } from "naive-ui";
-import { useRouter } from "vue-router"
+import { useRouter } from "vue-router";
+import Thinking from "@/components/chat/Thinking.vue"
+import ToolStatus from "@/components/chat/ToolStatus.vue"
+import SourceList from "@/components/chat/SourceList.vue"
 
 const router = useRouter();
 // props
@@ -56,14 +71,13 @@ const openReference = (fileSource) => {
   console.log("打开引用：", fileSource);
   const fileId = fileSource.file_id;
   router.push({
-  path: "/kb",
-  query: {
-    file_id: fileSource.file_id,
-    page: fileSource.locator_value,
-    keywordRoute: fileSource.locatorType  //chunk_text 高亮文本
-  }
-})
-
+    path: "/kb",
+    query: {
+      file_id: fileSource.file_id,
+      page: fileSource.locator_value,
+      keywordRoute: fileSource.locatorType, //chunk_text 高亮文本
+    },
+  });
 };
 const formatSource = (fileSource) => {
   const locatorType = fileSource.locator_type;
@@ -86,13 +100,13 @@ const formatSource = (fileSource) => {
   }
 
   return "";
-}
+};
 // 卡片样式
 const cardStyle = computed(() => ({
   maxWidth: "70%",
   width: "fit-content",
   wordBreak: "break-word",
-  marginBottom:"6px"
+  marginBottom: "6px",
 }));
 </script>
 

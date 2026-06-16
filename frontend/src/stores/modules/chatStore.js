@@ -88,6 +88,14 @@ export const useChatStore = defineStore("chat", {
             isUser: false,
             role: "AI",
             content: "你好 👋 我是你的 AI 助手",
+            // RAG引用
+            sources: [],
+            // Tool调用
+            tools: [],
+            // Graph状态
+            status: "",
+            // 是否正在调用Tool
+            runningTool: null,
             time: Date.now(),
             loading: false,
             id: Date.now() + Math.random(), // ⭐ 唯一ID
@@ -144,16 +152,99 @@ export const useChatStore = defineStore("chat", {
       return msg
     },
     // 更新 AI 消息（流式更新）
-    updateAIMessage(chunk) {
+    updateAIMessage(event) {
       const msgs = this.currentMessages
+
       if (!msgs.length) return
-      msgs[msgs.length - 1].content += chunk
+
+      const ai = msgs[msgs.length - 1]
+
+      switch (event.type) {
+
+        // =========================
+        // Token
+        // =========================
+        case "token":
+
+          ai.content += event.content || ""
+
+          break
+
+        // =========================
+        // Sources
+        // =========================
+        case "sources":
+
+          ai.sources = event.sources || []
+
+          break
+
+        // =========================
+        // Tool Start
+        // =========================
+        case "tool_start":
+
+          ai.runningTool = event.tool_name
+
+          ai.status = "tool_running"
+
+          break
+
+        // =========================
+        // Tool End
+        // =========================
+        case "tool_end":
+
+          ai.runningTool = null
+
+          ai.status = "tool_finished"
+
+          break
+
+        // =========================
+        // Graph Start
+        // =========================
+        case "graph_start":
+
+          ai.status = "thinking"
+
+          break
+
+        // =========================
+        // Graph End
+        // =========================
+        case "graph_end":
+
+          ai.status = "finished"
+
+          break
+      }
     },
     // 结束 AI 消息（流式更新结束）
-    finishAIMessage() {
+    finishAIMessage(event = {}) {
+      console.log(event,'finishAIMessage')
       const msgs = this.currentMessages
+
       if (!msgs.length) return
-      msgs[msgs.length - 1].loading = false
+
+      const ai = msgs[msgs.length - 1]
+
+      ai.loading = false
+
+      ai.status = "finished"
+
+      if (event.sources) {
+
+        ai.sources = event.sources
+
+      }
+
+      if (event.answer) {
+
+        ai.content = event.answer
+
+      }
+
     },
     updateSessionTitle(sessionId, title) {
       const session = this.sessions.find(s => s.id === sessionId);

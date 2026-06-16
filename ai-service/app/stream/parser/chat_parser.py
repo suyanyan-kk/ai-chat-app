@@ -3,101 +3,188 @@
 import json
 
 
-def parse_chat_event(event: dict):
+def parse_chat_event(
+    event: dict
+):
     """
     ChatModel Event Parser
 
-    专门负责解析：
+    LangGraph
+            ↓
+    Frontend Event
+
+    负责解析：
 
     on_chat_model_start
-    on_chat_model_stream
-    on_chat_model_end
 
-    返回：
-        None
-        或
-        json字符串
+    on_chat_model_stream
+
+    on_chat_model_end
     """
 
-    event_name = event.get("event")
+    event_name = event.get(
+        "event"
+    )
 
-    data = event.get("data", {})
-
-    # ==========================
-    # ChatModel Start
-    # ==========================
+    data = event.get(
+        "data",
+        {}
+    )
+    print("======chat parser ==========")
+    print(event_name)
+    print(data)
+    # =========================
+    # LLM Start
+    # =========================
     if event_name == "on_chat_model_start":
 
-        print("===== chat model start =====")
-        print(event)
+        return {
 
-        return json.dumps(
-
-            {
                 "type": "llm_start"
-            },
 
-            ensure_ascii=False
+            }
 
-        ) + "\n"
+    # =========================
+    # Token
+    # =========================
+    elif event_name == "on_chat_model_stream":
 
-    # ==========================
-    # Token Streaming
-    # ==========================
-    if event_name == "on_chat_model_stream":
-        print("===== chat model stream =====")
-        print(event)
+        chunk = data.get(
+            "chunk"
+        )
 
-        chunk = data.get("chunk")
-
-        print("===== chunk =====")
-        print(chunk)
-        
         if chunk is None:
 
             return None
 
-        token = chunk.content
+        token = getattr(
+            chunk,
+            "content",
+            ""
+        )
 
-        if not token:
+        if token == "":
 
             return None
-
-        return json.dumps(
-
-            {
+        print("======chat parser stream ==========")
+        print(event_name)
+        print(token)
+        return {
 
                 "type": "token",
 
                 "content": token
 
-            },
+            }
 
-            ensure_ascii=False
+    # =========================
+    # LLM End
+    # =========================
+    elif event_name == "on_chat_model_end":
 
-        ) + "\n"
-
-    # ==========================
-    # ChatModel End
-    # ==========================
-    if event_name == "on_chat_model_end":
-
-        print("===== chat model end =====")
-        print(event)
-
-        return json.dumps(
-
-            {
+        return {
 
                 "type": "llm_end"
 
-            },
-
-            ensure_ascii=False
-
-        ) + "\n"
+            }
 
     return None
+
+# def parse_chat_event(event: dict):
+#     """
+#     ChatModel Event Parser
+
+#     专门负责解析：
+
+#     on_chat_model_start
+#     on_chat_model_stream
+#     on_chat_model_end
+
+#     返回：
+#         None
+#         或
+#         json字符串
+#     """
+
+#     event_name = event.get("event")
+
+#     data = event.get("data", {})
+
+#     # ==========================
+#     # ChatModel Start
+#     # ==========================
+#     if event_name == "on_chat_model_start":
+
+#         print("===== chat model start =====")
+#         print(event)
+
+#         return json.dumps(
+
+#             {
+#                 "type": "llm_start"
+#             },
+
+#             ensure_ascii=False
+
+#         ) + "\n"
+
+#     # ==========================
+#     # Token Streaming
+#     # ==========================
+#     if event_name == "on_chat_model_stream":
+#         print("===== chat model stream =====")
+#         print(event)
+
+#         chunk = data.get("chunk")
+
+#         print("===== chunk =====")
+#         print(chunk)
+
+#         if chunk is None:
+
+#             return None
+
+#         token = chunk.content
+
+#         if not token:
+
+#             return None
+
+#         return json.dumps(
+
+#             {
+
+#                 "type": "token",
+
+#                 "content": token
+
+#             },
+
+#             ensure_ascii=False
+
+#         ) + "\n"
+
+#     # ==========================
+#     # ChatModel End
+#     # ==========================
+#     if event_name == "on_chat_model_end":
+
+#         print("===== chat model end =====")
+#         print(event)
+
+#         return json.dumps(
+
+#             {
+
+#                 "type": "llm_end"
+
+#             },
+
+#             ensure_ascii=False
+
+#         ) + "\n"
+
+#     return None
 
 # 返回的结构
 # {

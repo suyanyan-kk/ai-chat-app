@@ -1,184 +1,465 @@
+# app/chat/chat_service.py
+
 import json
 
 from app.core.logger import logger
 from app.core.exception import AppException
 
 from app.agent.agent_service import (
-    agent_chat_event_stream
+    agent_chat_stream,
 )
-from app.stream.router.event_router import (
-    route_event
+
+from app.stream.router.graph_stream_router import (
+    route_graph_stream,
 )
+
+
 async def stream_chat(
     session_id: str,
-    user_input: str
+    user_input: str,
 ):
-    async for event in agent_chat_event_stream(
-                                    user_input,
-                                    session_id
-                    ):
+    """
+    Agent Streaming
 
-        print("\n===== chat event =====")
-        print(event)
+    企业级双通道：
 
-    response = route_event(event)
+    messages:
+        token streaming
 
-    if response:
+    updates:
+        sources streaming
+    """
 
-        yield response
-    # logger.info(
-    #     f"[聊天请求] session={session_id}, message={user_input}"
-    # )
+    logger.info(
+        f"[聊天请求] session={session_id}, message={user_input}"
+    )
 
-    # if not user_input:
-    #     raise AppException("消息不能为空")
-    # async for event in agent_chat_event_stream(
-    #         user_input,
-    #         session_id
-    #     ):
+    if not user_input:
 
-    #         print("\n===== chat event =====")
-    #         print(event)
-    #         parsed = parse_event(event)
+        raise AppException(
+            "消息不能为空"
+        )
 
-    #         if parsed is None:
-    #             continue
+    current_answer = ""
 
-    #         print(parsed)
-    #         yield (
-    #         json.dumps(
-    #             event,
-    #             ensure_ascii=False
-    #         )
-    #         + "\n"
-    #     )
-    # try:
+    current_sources = []
 
-    #     # =========================
-    #     # start
-    #     # =========================
-    #     yield json.dumps(
-    #         {
-    #             "type": "start",
-    #             "data": {}
-    #         },
-    #         ensure_ascii=False
-    #     ) + "\n"
+    last_sources = []
 
-    #     final_answer = ""
+    try:
 
-    #     sources = []
+        # ==========================
+        # Start
+        # ==========================
 
-    #     # =========================
-    #     # graph stream
-    #     # =========================
-    #     async for event in agent_chat_event_stream(
-    #         user_input,
-    #         session_id
-    #     ):
+        yield json.dumps(
 
-    #         print("\n===== chat event =====")
-    #         print(event)
+            {
+                "type": "start",
 
-    #         # =====================================
-    #         # Agent Node
-    #         # =====================================
-    #         if "agent" in event:
+                "data": {}
+            },
 
-    #             node_data = event["agent"]
+            ensure_ascii=False
 
-    #             # sources
-    #             if "sources" in node_data:
+        ) + "\n"
 
-    #                 sources = node_data.get(
-    #                     "sources",
-    #                     sources
-    #                 )
+        async for stream_item in agent_chat_stream(
 
-    #             # messages
-    #             messages = node_data.get(
-    #                 "messages",
-    #                 []
-    #             )
+            user_input,
 
-    #             if messages:
+            session_id
 
-    #                 last_message = messages[-1]
+        ):
+            # print("=====graph.astream item=========")
+            # print(stream_item)
+            event = route_graph_stream(
+                stream_item
+            )
 
-    #                 if hasattr(
-    #                     last_message,
-    #                     "content"
-    #                 ):
+            if event is None:
 
-    #                     final_answer = (
-    #                         last_message.content
-    #                     )
+                continue
 
-    #                     yield json.dumps(
-    #                         {
-    #                             "type": "stream",
-    #                             "data": {
-    #                                 "context":
-    #                                     final_answer,
-    #                                 "sources":
-    #                                     sources
-    #                             }
-    #                         },
-    #                         ensure_ascii=False
-    #                     ) + "\n"
+            event_type = event["type"]
 
-    #         # =====================================
-    #         # Tool Node
-    #         # =====================================
-    #         if "tools" in event:
+            # ==========================
+            # Sources
+            # ==========================
 
-    #             tool_data = event["tools"]
+            if event_type == "sources":
 
-    #             # 关键：
-    #             # 保留知识库引用来源
-    #             sources = tool_data.get(
-    #                 "sources",
-    #                 sources
-    #             )
+                sources = event.get(
+                    "sources",
+                    []
+                )
 
-    #             yield json.dumps(
-    #                 {
-    #                     "type": "tool",
-    #                     "data": {
-    #                         "sources": sources
-    #                     }
-    #                 },
-    #                 ensure_ascii=False
-    #             ) + "\n"
+                if sources != last_sources:
 
-    #     # =========================
-    #     # end
-    #     # =========================
-    #     yield json.dumps(
-    #         {
-    #             "type": "end",
-    #             "data": {
-    #                 "context": final_answer,
-    #                 "sources": sources
-    #             }
-    #         },
-    #         ensure_ascii=False
-    #     ) + "\n"
+                    current_sources = sources
 
-    # except Exception as e:
+                    last_sources = sources.copy()
+                    print('========current_sources====')
+                    print(current_sources)
 
-    #     logger.error(
-    #         f"[LLM错误] {str(e)}"
-    #     )
+                    yield json.dumps(
 
-    #     yield json.dumps(
-    #         {
-    #             "type": "error",
-    #             "data": {
-    #                 "message": str(e)
-    #             }
-    #         },
-    #         ensure_ascii=False
-    #     ) + "\n"
+                        {
+                            "type": "sources",
 
-    #     raise
+                            "data": {
+                                "sources": current_sources
+                            }
+                        },
+
+                        ensure_ascii=False
+
+                    ) + "\n"
+
+            # ==========================
+            # Token
+            # ==========================
+
+            elif event_type == "token":
+
+                token = event.get(
+                    "content",
+                    ""
+                )
+
+                if not token:
+
+                    continue
+
+                current_answer += token
+                # print('========token====')
+                # print(token)
+                yield json.dumps(
+
+                    {
+                        "type": "stream",
+
+                        "data": {
+                            "answer": token
+                        }
+                    },
+
+                    ensure_ascii=False
+
+                ) + "\n"
+
+        # ==========================
+        # End
+        # ==========================
+        print("=======End=======")
+        print(current_answer)
+        print(current_sources)
+
+        yield json.dumps(
+            {
+                "type": "end",
+
+                "data": {
+
+                    "answer": current_answer,
+
+                    "sources": current_sources
+
+                }
+            },
+
+            ensure_ascii=False
+
+        ) + "\n"
+
+    except Exception as e:
+
+        logger.exception(e)
+
+        raise AppException(
+            "聊天过程中发生错误"
+        )
+
+# import json
+
+# from app.core.logger import logger
+# from app.core.exception import AppException
+
+# from app.agent.agent_service import (
+#     agent_chat_event_stream
+# )
+
+# from app.stream.router.event_router import (
+#     route_event
+# )
+
+
+# async def stream_chat(
+#     session_id: str,
+#     user_input: str
+# ):
+#     """
+#     Agent Streaming
+
+#     整个 Streaming 生命周期：
+
+#     graph_start
+#             ↓
+#     tool_start
+#             ↓
+#     tool_end
+#             ↓
+#     graph_state（sources）
+#             ↓
+#     token
+#             ↓
+#     token
+#             ↓
+#     token
+#             ↓
+#     graph_end
+#     """
+
+#     logger.info(
+#         f"[聊天请求] session={session_id}, message={user_input}"
+#     )
+
+#     if not user_input:
+#         raise AppException("消息不能为空")
+
+#     # ===================================
+#     # 整个回答
+#     # ===================================
+
+#     current_answer = ""
+
+#     # ===================================
+#     # 当前 Sources
+#     # ===================================
+
+#     current_sources = []
+
+#     # ===================================
+#     # 上一次 Sources
+#     #
+#     # 防止重复发送
+#     # ===================================
+
+#     last_sources = []
+
+#     try:
+
+#         async for raw_event in agent_chat_event_stream(
+
+#             user_input,
+
+#             session_id
+
+#         ):
+
+#             print("\n===== chat_server  =====")
+
+#             # ==========================
+#             # LangGraph Event
+#             #
+#             # ↓
+#             #
+#             # Business Event
+#             # ==========================
+
+#             event = route_event(
+#                 raw_event
+#             )
+
+#             if event is None:
+
+#                 continue
+
+
+
+#             event_type = event["type"]
+#             print("\n===== 走完event router parser后返回的 eventName=====")
+#             print(event_type)
+#             # ===================================
+#             # Graph Start
+#             # ===================================
+
+#             if event_type == "graph_start":
+
+#                 yield json.dumps(
+
+#                     {
+#                         "type": "start",
+
+#                         "data": {}
+#                     },
+
+#                     ensure_ascii=False
+
+#                 ) + "\n"
+
+#             # ===================================
+#             # Tool Start
+#             # ===================================
+
+#             elif event_type == "tool_start":
+
+#                 yield json.dumps(
+
+#                     {
+#                         "type": "tool_start",
+
+#                         "data": {
+
+#                             "tool":
+
+#                                 event["tool_name"]
+
+#                         }
+
+#                     },
+
+#                     ensure_ascii=False
+
+#                 ) + "\n"
+
+#             # ===================================
+#             # Tool End
+#             # ===================================
+
+#             elif event_type == "tool_end":
+
+#                 yield json.dumps(
+
+#                     {
+#                         "type": "tool_end",
+
+#                         "data": {
+
+#                             "tool":
+
+#                                 event["tool_name"]
+
+#                         }
+
+#                     },
+
+#                     ensure_ascii=False
+
+#                 ) + "\n"
+
+#             # ===================================
+#             # Graph State
+#             #
+#             # Sources 更新
+#             # ===================================
+
+#             elif event_type == "graph_state":
+
+#                 sources = event.get(
+
+#                     "sources",
+
+#                     []
+
+#                 )
+#                 print("=======graph_state sources=========")
+#                 print(sources)
+#                 if sources != last_sources:
+
+#                     current_sources = sources
+
+#                     last_sources = sources.copy()
+
+#                     yield json.dumps(
+
+#                         {
+
+#                             "type": "sources",
+
+#                             "data": {
+
+#                                 "sources":
+
+#                                     current_sources
+
+#                             }
+
+#                         },
+
+#                         ensure_ascii=False
+
+#                     ) + "\n"
+
+#             # ===================================
+#             # Token Streaming
+#             # ===================================
+
+#             elif event_type == "token":
+
+#                 token = event.get(
+
+#                     "content",
+
+#                     ""
+
+#                 )
+
+#                 current_answer += token
+
+#                 yield json.dumps(
+
+#                     {
+
+#                         "type": "stream",
+
+#                         "data": {
+
+#                             "answer":
+
+#                                 token
+
+#                         }
+
+#                     },
+
+#                     ensure_ascii=False
+
+#                 ) + "\n"
+
+#             # ===================================
+#             # Graph End
+#             # ===================================
+
+#             elif event_type == "graph_end":
+
+#                 yield json.dumps(
+
+#                     {
+
+#                         "type": "end",
+
+#                         "data": {
+
+#                             "answer":
+
+#                                 current_answer,
+
+#                             "sources":
+
+#                                 current_sources
+
+#                         }
+
+#                     },
+
+#                     ensure_ascii=False
+
+#                 ) + "\n"
+#             print("\n===== chat_server end  =====")
+
+#     except Exception as e:
+
+#         logger.exception(e)
+
+#         raise AppException("聊天过程中发生错误")
