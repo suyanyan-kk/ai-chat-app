@@ -206,6 +206,10 @@ export const useChatStore = defineStore("chat", {
 
           ai.content += event.content || ""
 
+          if (event.content) {
+            ai.status = "streaming"
+          }
+
           break
 
         // =========================

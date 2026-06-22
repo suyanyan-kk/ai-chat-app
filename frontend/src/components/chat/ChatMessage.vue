@@ -6,6 +6,7 @@
     <!-- 消息区域 -->
     <div class="msg-wrapper">
       <n-card
+        v-if="msg.isUser || msg.content"
         content-style="padding: 8px 12px;"
         :style="cardStyle"
         :class="['msg', msg.isUser ? 'msg-user' : 'msg-bot']"
@@ -17,11 +18,11 @@
         <div v-else v-html="msg.content"></div>
 
         <!-- 打字光标 -->
-        <span v-if="msg.loading" class="cursor"> ▌ </span>
+        <span v-if="msg.loading && msg.content" class="cursor"> ▌ </span>
       </n-card>
       <!-- Thinking -->
 
-      <Thinking :show="msg.status === 'thinking'" />
+      <Thinking :show="msg.status === 'thinking' && !msg.content" />
       <!-- Tool -->
 
       <ToolStatus :tool="msg.runningTool" />

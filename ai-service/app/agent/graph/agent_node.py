@@ -49,6 +49,28 @@ llm_with_tools = model.bind_tools(
 )
 
 
+SMALL_TALK_INPUTS = {
+    "hi",
+    "hello",
+    "hey",
+    "你好",
+    "您好",
+    "嗨",
+    "哈喽",
+    "在吗",
+    "在不在",
+    "谢谢",
+    "感谢",
+    "ok",
+    "好的",
+    "你好啊",
+    "你好呀",
+    "您好啊",
+    "您好呀",
+    "hello there",
+}
+
+
 def get_latest_user_message(
     messages,
 ):
@@ -98,6 +120,22 @@ def has_search_knowledge_after_latest_user(
     return False
 
 
+def should_skip_knowledge_search(
+    content,
+):
+    text = str(content or "").strip().lower()
+
+    if not text:
+        return True
+
+    normalized = text.strip(" 。.!！?？~～")
+
+    if normalized in SMALL_TALK_INPUTS:
+        return True
+
+    return False
+
+
 def should_force_search_knowledge(
     state,
 ):
@@ -111,6 +149,11 @@ def should_force_search_knowledge(
     )
 
     if latest_user_message is None:
+        return False
+
+    if should_skip_knowledge_search(
+        latest_user_message.content
+    ):
         return False
 
     if has_search_knowledge_after_latest_user(
@@ -157,6 +200,30 @@ def agent_node(
     state,
 ):
     print("===== agent node =====")
+
+    latest_user_message = get_latest_user_message(
+        state.get(
+            "messages",
+            []
+        )
+    )
+
+    if latest_user_message and should_skip_knowledge_search(
+        latest_user_message.content
+    ):
+
+        response = model.invoke(
+            build_messages(
+                state
+            )
+        )
+
+        return {
+            "messages": [
+                response
+            ],
+            "sources": []
+        }
 
     if should_force_search_knowledge(
         state
@@ -248,4 +315,3 @@ def agent_node(
 #             response
 #         ]
 #     }
-
