@@ -1,5 +1,8 @@
+from pathlib import Path
+
 from fastapi import FastAPI,Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.chat import router as chat_router
 from app.api.title import router as title_router
@@ -12,6 +15,14 @@ import uvicorn
 from app.api.chunk_debug import router as chunk_router
 from app.api.retrieval_debug import router as debug_router
 app = FastAPI()
+
+UPLOAD_DIR = Path(__file__).resolve().parent / "rag" / "uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+app.mount(
+    "/uploads",
+    StaticFiles(directory=str(UPLOAD_DIR)),
+    name="uploads"
+)
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):

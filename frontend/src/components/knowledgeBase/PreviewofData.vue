@@ -15,13 +15,13 @@
       <n-tag type="error" v-if="currentDetail?.file?.embedding_status === 'failed'"> 向量化失败 </n-tag>
     </div>
 
-    <div class="preview-body">
-      <!-- markdown 内容 -->
-      <div class="markdown-body" v-html="htmlContent" />
+    <div class="preview-body">      
       <!-- 图片 -->
-      <img v-if="isImage" :src="currentDetail?.file?.url" class="image" />
+      <img v-if="isImage" :src="previewUrl" class="image" />
       <!-- pdf -->
-      <iframe v-else-if="isPdf" :src="currentDetail?.file?.url" class="pdf" />
+      <iframe v-else-if="isPdf" :src="previewUrl" class="pdf" />
+      <!-- markdown 内容 -->
+      <div v-else="!isImage && !isPdf" class="markdown-body" v-html="htmlContent" />
     </div>
   </div>
 </template>
@@ -29,12 +29,14 @@
 <script setup>
 import { computed } from "vue";
 import MarkdownIt from "markdown-it";
+import { useRoute } from "vue-router";
 
 import { storeToRefs } from "pinia";
 
 import { useKnowledgeBaseStore } from "@/stores/modules/knowledgeBase";
 
 const kbStore = useKnowledgeBaseStore();
+const route = useRoute();
 
 const { currentDetail } = storeToRefs(kbStore);
 
@@ -49,6 +51,24 @@ const md = new MarkdownIt({
 const htmlContent = computed(() => {
   return md.render(currentDetail.value?.file?.content || "");
 });
+
+const fileUrl = computed(() => {
+  return currentDetail.value?.file?.url || currentDetail.value?.file?.file_url || "";
+});
+
+const currentPage = computed(() => {
+  const page = Array.isArray(route.query.page) ? route.query.page[0] : route.query.page;
+
+  return page || "";
+});
+
+const previewUrl = computed(() => {
+  if (!fileUrl.value) return "";
+  if (!isPdf.value || !currentPage.value) return fileUrl.value;
+
+  return `${fileUrl.value.split("#")[0]}#page=${encodeURIComponent(currentPage.value)}`;
+});
+
 const isImage = computed(() => {
   return /\.(png|jpg|jpeg|gif)$/i.test(currentDetail.value?.file?.original_name);
 });
@@ -178,5 +198,19 @@ const isPdf = computed(() => {
   border-radius: 12px;
 
   margin: 16px 0;
+}
+
+.image {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+}
+
+.pdf {
+  width: 100%;
+  min-height: 70vh;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
 }
 </style>

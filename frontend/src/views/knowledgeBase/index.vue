@@ -43,6 +43,7 @@ const route = useRoute();
 // 当前视图：预览、编辑等addFile
 const currentView = ref("empty");
 const loading = ref(false);
+const hasLoadedList = ref(false);
 const kbStore = useKnowledgeBaseStore();
 const keyword = ref("");
 // 表单数据 俩种响应式
@@ -70,12 +71,6 @@ const currentComponentProps = computed(() => {
       return {};
   }
 });
-
-const sourceId = route.query.source_id;
-
-const page = route.query.page;
-
-const keywordRoute = route.query.keyword;
 
 const handleSelect = (operationType, node) => {
   console.log("选中节点：", node);
@@ -107,6 +102,29 @@ const handleCreateFile = (data) => {
   createFileData.value.file_type = data.file_type;
   currentView.value = "createFile";
 };
+const openParentFolder = (parentId) => {
+  if (!parentId) return;
+
+  const parent = kbStore.getNodeById(Number(parentId));
+
+  if (parent && !parent.is_open) {
+    kbStore.toggleFolder(parent.id);
+  }
+};
+
+const openKnowledgeByFileId = async (fileId) => {
+  if (!fileId) return;
+
+  const res = await getKnowledgeDetailByFileId(fileId);
+
+  if (res.code === 0) {
+    openParentFolder(res.data?.parent_id);
+    handleSelect("preview", res.data);
+    kbStore.setCurrentId(res.data.id);
+    kbStore.getcurrentDetail(res.data);
+  }
+};
+
 // const items = ref(Array.from({ length: 10 }, (_, i) => mock(i)));
 
 // const noMore = computed(() => items.value.length > 16);
@@ -119,19 +137,11 @@ const handleCreateFile = (data) => {
 //   loading.value = false;
 // }
 watch(
-  () => route.query,
-  async (query) => {
-    if (!query.file_id) return;
-    await getKnowledgeDetailByFileId(query.file_id).then((res) => {
-      // debugger
-      if (res.code === 0) {
-        // 如果是文件要传递他的父节点的id
-        kbStore.toggleFolder(res.data?.parent_id);
-        handleSelect("preview", res.data);
-        kbStore.setCurrentId(res.data.id);
-        kbStore.getcurrentDetail(res.data);
-      }
-    });
+  () => route.query.file_id,
+  async (fileId) => {
+    if (!hasLoadedList.value) return;
+
+    await openKnowledgeByFileId(fileId);
   },
   {
     immediate: true,
@@ -140,6 +150,8 @@ watch(
 onMounted(async () => {
   const knowledgeList = await getKnowledge();
   kbStore.setList(knowledgeList);
+  hasLoadedList.value = true;
+  await openKnowledgeByFileId(route.query.file_id);
 });
 </script>
 

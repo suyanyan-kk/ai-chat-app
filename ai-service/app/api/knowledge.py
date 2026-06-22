@@ -250,6 +250,7 @@ def build_knowledge_detail(
                 "id": file_item.id,
                 "original_name": file_item.original_name,
                 "uuid_name": file_item.uuid_name,
+                "url": f"/api/uploads/{file_item.uuid_name}",
                 "file_url": file_item.file_url,
                 "file_size": file_item.file_size,
                 "file_type": file_item.file_type,

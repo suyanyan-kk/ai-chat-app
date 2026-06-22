@@ -1,6 +1,44 @@
 import { defineStore } from "pinia"
 import { v4 as uuidv4 } from "uuid"
 
+const normalizePage = (page) => {
+  if (Array.isArray(page)) {
+    return normalizePage(page[0])
+  }
+
+  if (page === undefined || page === null || page === "") {
+    return null
+  }
+
+  const numericPage = Number(page)
+
+  return Number.isNaN(numericPage) ? page : numericPage
+}
+
+const normalizeSource = (source = {}) => {
+  const page = normalizePage(
+    source.page ?? (source.locator_type === "page" ? source.locator_value : null)
+  )
+
+  return {
+    id: source.id ?? `${source.file_id ?? "unknown"}-${page ?? "file"}`,
+    file_id: source.file_id,
+    file_name: source.file_name,
+    file_type: source.file_type,
+    page,
+  }
+}
+
+const normalizeSources = (sources = []) => {
+  if (!Array.isArray(sources)) return []
+
+  return sources.map(normalizeSource)
+}
+
+const getEventSources = (event = {}) => {
+  return event.sources ?? event.data?.sources ?? []
+}
+
 export const useChatStore = defineStore("chat", {
   state: () => ({
     sessions: [
@@ -175,7 +213,7 @@ export const useChatStore = defineStore("chat", {
         // =========================
         case "sources":
 
-          ai.sources = event.sources || []
+          ai.sources = normalizeSources(getEventSources(event))
 
           break
 
@@ -235,7 +273,7 @@ export const useChatStore = defineStore("chat", {
 
       if (event.sources) {
 
-        ai.sources = event.sources
+        ai.sources = normalizeSources(event.sources)
 
       }
 

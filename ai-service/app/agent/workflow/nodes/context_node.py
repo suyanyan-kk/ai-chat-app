@@ -41,6 +41,10 @@ def build_context_node(state):
             metadata.get(
                 "file_id"
             ),
+
+            metadata.get(
+                "page"
+            ),
         )
 
         if source_key not in seen_sources:
