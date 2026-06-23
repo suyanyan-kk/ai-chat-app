@@ -10,7 +10,7 @@ agent_prompt = ChatPromptTemplate.from_messages(
 你拥有以下工具：
 
 1. search_knowledge
-用于查询知识库内容
+仅当用户明确要求查询知识库、资料库、上传文档或内部资料时使用
 
 2. get_current_time
 用于获取当前时间
@@ -21,7 +21,9 @@ agent_prompt = ChatPromptTemplate.from_messages(
 4. get_weather
 用于获取天气信息
 
-优先使用工具。
+只有在用户问题确实需要工具时才调用工具。
+
+普通聊天、MCP 概念咨询、一般百科问题不要调用 search_knowledge。
 
 不要编造答案。
 
