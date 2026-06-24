@@ -413,17 +413,16 @@ def should_force_search_knowledge(
 
         return False
 
-    if has_tool_after_latest_user(
-        messages,
-        "search_knowledge",
+    # 关键：
+    # 如果当前用户问题已经执行过任意 Tool，
+    # 就不要再强制调用 search_knowledge。
+    if has_any_tool_after_latest_user(
+        messages
     ):
 
         return False
 
-    return is_knowledge_search_intent(
-        latest_user_message.content
-    )
-
+    return True
 
 def build_search_knowledge_call(
     state,
@@ -522,3 +521,26 @@ def agent_node(
             response
         ]
     }
+def has_any_tool_after_latest_user(
+    messages,
+):
+    latest_user_index = get_latest_user_index(
+        messages
+    )
+
+    if latest_user_index == -1:
+
+        return False
+
+    for message in messages[
+        latest_user_index + 1:
+    ]:
+
+        if isinstance(
+            message,
+            ToolMessage,
+        ):
+
+            return True
+
+    return False

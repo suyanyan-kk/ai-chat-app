@@ -18,6 +18,59 @@ _mcp_tools_cache: Optional[list[BaseTool]] = None
 _mcp_tools_lock = threading.Lock()
 
 
+SAFE_MCP_TOOL_NAMES = {
+
+    # ==========================
+    # Demo
+    # ==========================
+
+    "echo",
+    "get_project_status",
+    "get_learning_route",
+
+    # ==========================
+    # Filesystem Readonly
+    # ==========================
+
+    "read_file",
+    "read_text_file",
+    "read_media_file",
+    "read_multiple_files",
+    "list_directory",
+    "list_directory_with_sizes",
+    "directory_tree",
+    "search_files",
+    "get_file_info",
+    "list_allowed_directories",
+
+    # ==========================
+    # GitHub Readonly
+    # ==========================
+
+    "get_commit",
+    "get_file_contents",
+    "get_label",
+    "get_latest_release",
+    "get_release_by_tag",
+    "get_tag",
+    "issue_read",
+    "list_branches",
+    "list_commits",
+    "list_issue_types",
+    "list_issues",
+    "list_pull_requests",
+    "list_releases",
+    "list_repository_collaborators",
+    "list_tags",
+    "pull_request_read",
+    "search_code",
+    "search_commits",
+    "search_issues",
+    "search_pull_requests",
+    "search_repositories",
+}
+
+
 def print_exception_detail(
     error: BaseException,
 ):
@@ -37,6 +90,7 @@ def print_exception_detail(
             print(f"----- child exception {index} -----")
             print(type(child))
             print(repr(child))
+
             traceback.print_exception(
                 type(child),
                 child,
@@ -50,10 +104,43 @@ def print_exception_detail(
     )
 
 
+def filter_safe_mcp_tools(
+    tools: list[BaseTool],
+) -> list[BaseTool]:
+
+    safe_tools = []
+
+    skipped_tools = []
+
+    for tool in tools:
+
+        if tool.name in SAFE_MCP_TOOL_NAMES:
+
+            safe_tools.append(
+                tool
+            )
+
+        else:
+
+            skipped_tools.append(
+                tool.name
+            )
+
+    print("===== MCP safe tools =====")
+    print(
+        [
+            tool.name
+            for tool in safe_tools
+        ]
+    )
+
+    print("===== MCP skipped unsafe tools =====")
+    print(skipped_tools)
+
+    return safe_tools
+
+
 async def load_mcp_tools() -> list[BaseTool]:
-    """
-    异步加载 MCP Tools。
-    """
 
     print("===== load MCP tools start =====")
 
@@ -61,7 +148,7 @@ async def load_mcp_tools() -> list[BaseTool]:
 
     tools = await client.get_tools()
 
-    print("===== MCP tools loaded =====")
+    print("===== MCP tools loaded raw =====")
 
     for tool in tools:
 
@@ -69,10 +156,15 @@ async def load_mcp_tools() -> list[BaseTool]:
             f"MCP Tool: {tool.name}"
         )
 
-    return tools
+    safe_tools = filter_safe_mcp_tools(
+        tools
+    )
+
+    return safe_tools
 
 
 def _run_async_in_new_thread() -> list[BaseTool]:
+
     result = {
         "tools": None,
         "error": None,
@@ -111,12 +203,6 @@ def _run_async_in_new_thread() -> list[BaseTool]:
 
 
 def load_mcp_tools_sync() -> list[BaseTool]:
-    """
-    同步加载 MCP Tools。
-
-    当前 agent_node.py 在模块加载阶段构造 tools，
-    所以这里做同步包装。
-    """
 
     global _mcp_tools_cache
 
