@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, File, UploadFile
+from fastapi import APIRouter, Depends, status, File, UploadFile, HTTPException
 from uuid import uuid4
 import json
 import os
@@ -35,6 +35,24 @@ def get_all(db: Session = Depends(get_db)):
 @router.post("/addKnowledge", status_code=status.HTTP_201_CREATED)
 #  ** （解构）把 data 对象的属性解构成一个个参数传给 Knowledge 构造函数
 def create_knowledge(data: schemas.KnowledgeCreate, db: Session = Depends(get_db)):
+    if data.type == "file":
+        if not data.file_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="文件节点必须关联已上传的文件",
+            )
+
+        file_item = db.get(
+            models.KnowledgeFile,
+            data.file_id,
+        )
+
+        if not file_item:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="关联的上传文件不存在",
+            )
+
     item = models.Knowledge(**data.dict())
     # ORM = 把“数据库操作”变成“操作对象”
     # print(item.__dict__)

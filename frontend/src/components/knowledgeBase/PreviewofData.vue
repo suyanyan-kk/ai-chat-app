@@ -15,13 +15,27 @@
       <n-tag type="error" v-if="currentDetail?.file?.embedding_status === 'failed'"> 向量化失败 </n-tag>
     </div>
 
-    <div class="preview-body">      
+    <div class="preview-body">
+      <div v-if="!file" class="preview-empty" role="status">
+        <strong>该节点未关联文件</strong>
+        <span>请重新上传文件，或修复该节点的文件关联。</span>
+      </div>
       <!-- 图片 -->
-      <img v-if="isImage" :src="previewUrl" class="image" />
+      <img v-else-if="isImage" :src="previewUrl" class="image" />
       <!-- pdf -->
-      <iframe v-else-if="isPdf" :src="previewUrl" class="pdf" />
+      <iframe
+        v-else-if="isPdf && previewUrl"
+        :key="previewUrl"
+        :src="previewUrl"
+        :title="file.original_name || currentDetail?.title || 'PDF 预览'"
+        class="pdf"
+      />
       <!-- markdown 内容 -->
-      <div v-else="!isImage && !isPdf" class="markdown-body" v-html="htmlContent" />
+      <div v-else-if="htmlContent" class="markdown-body" v-html="htmlContent" />
+      <div v-else class="preview-empty" role="status">
+        <strong>暂不支持预览此文件</strong>
+        <span>{{ file.original_name || "文件信息不完整" }}</span>
+      </div>
     </div>
   </div>
 </template>
@@ -39,6 +53,7 @@ const kbStore = useKnowledgeBaseStore();
 const route = useRoute();
 
 const { currentDetail } = storeToRefs(kbStore);
+const file = computed(() => currentDetail.value?.file || null);
 
 // markdown-it
 const md = new MarkdownIt({
@@ -49,11 +64,21 @@ const md = new MarkdownIt({
 
 // markdown -> html
 const htmlContent = computed(() => {
-  return md.render(currentDetail.value?.file?.content || "");
+  return md.render(file.value?.content || "");
 });
 
 const fileUrl = computed(() => {
-  return currentDetail.value?.file?.url || currentDetail.value?.file?.file_url || "";
+  const publicUrl = file.value?.url?.trim();
+
+  if (publicUrl) return publicUrl;
+
+  const uuidName = file.value?.uuid_name?.trim();
+
+  if (uuidName) {
+    return `/api/uploads/${encodeURIComponent(uuidName)}`;
+  }
+
+  return "";
 });
 
 const currentPage = computed(() => {
@@ -70,11 +95,17 @@ const previewUrl = computed(() => {
 });
 
 const isImage = computed(() => {
-  return /\.(png|jpg|jpeg|gif)$/i.test(currentDetail.value?.file?.original_name);
+  const type = file.value?.file_type?.toLowerCase().trim();
+  const name = file.value?.original_name?.trim() || file.value?.uuid_name?.trim() || "";
+
+  return ["png", "jpg", "jpeg", "gif"].includes(type) || /\.(png|jpg|jpeg|gif)$/i.test(name);
 });
 
 const isPdf = computed(() => {
-  return /\.pdf$/i.test(currentDetail.value?.file?.original_name);
+  const type = file.value?.file_type?.toLowerCase().trim();
+  const name = file.value?.original_name?.trim() || file.value?.uuid_name?.trim() || "";
+
+  return type === "pdf" || /\.pdf$/i.test(name);
 });
 </script>
 
@@ -107,6 +138,26 @@ const isPdf = computed(() => {
   padding: 32px;
 
   background: transparent;
+}
+
+.preview-empty {
+  min-height: 240px;
+  display: grid;
+  place-content: center;
+  gap: 8px;
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.62);
+  text-align: center;
+}
+
+.preview-empty strong {
+  color: #fff;
+  font-size: 16px;
+}
+
+.preview-empty span {
+  font-size: 13px;
 }
 
 /* markdown */

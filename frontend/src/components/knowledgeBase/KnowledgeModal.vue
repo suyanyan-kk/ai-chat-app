@@ -31,11 +31,12 @@
       <!-- 🔥 新增：上传区域（仅新建文件时显示） -->
       <div v-if="type === 'file'" class="upload">
         <n-upload
-          multiple
           style="width: 100%"
           :default-upload="false"
           :on-change="handleFileChange"
           :show-file-list="true"
+          :disabled="uploading"
+          :max="1"
           accept=".pdf,.txt,.md,.doc,.docx"
           v-model:file-list="fileList"
           :on-drop="handleDrop"
@@ -50,8 +51,16 @@
         </n-upload>
       </div>
       <div class="footer">
-        <n-button ghost @click="close" color="#fff">取消</n-button>
-        <n-button type="primary" @enter="handleSubmit" @click="handleSubmit"> 确认 </n-button>
+        <n-button ghost :disabled="uploading" @click="close" color="#fff">取消</n-button>
+        <n-button
+          type="primary"
+          :loading="uploading"
+          :disabled="submitDisabled"
+          @enter="handleSubmit"
+          @click="handleSubmit"
+        >
+          {{ uploading ? "正在解析" : "确认" }}
+        </n-button>
       </div>
     </div>
   </n-modal>
@@ -80,6 +89,13 @@ const localForm = ref({
   content: "",
 });
 const fileList = ref([]);
+const uploading = ref(false);
+const submitDisabled = computed(() => {
+  if (uploading.value) return true;
+
+  return props.type === "file" && !localForm.value.file_id;
+});
+
 const visible = computed({
   get: () => props.show,
   set: (val) => emit("update:show", val),
@@ -91,41 +107,60 @@ const handleDrop = (e) => {
 };
 // 文件变化
 const handleFileChange = async ({ fileList: files }) => {
-  // 目前只支持上传一个文件，所以我们直接取第一个文件来处理
-  fileList.value = files
-  const file = files[0]?.file
+  fileList.value = files.slice(-1);
+  const file = fileList.value[0]?.file;
 
   if (!file) {
-    console.log("没有获取到文件")
-    return
+    localForm.value.file_id = null;
+    return;
   }
- const res = await uploadFile(files[0].file);
-  if (res.code === 0) {
+
+  uploading.value = true;
+  localForm.value.file_id = null;
+
+  try {
+    const res = await uploadFile(file);
+
+    if (res.code !== 0) {
+      throw new Error(res.message || "文件上传失败");
+    }
+
     localForm.value.file_id = res.data.id;
-    message.success("文件上传成功");
-    console.log("文件上传成功，内容已获取", res.data);
-  } else {
-    localForm.value.file_id= null;
+    message.success("文件解析完成");
+  } catch (error) {
     fileList.value = [];
-    message.error("文件上传失败");
-    console.log("文件上传失败: " + res.message);
+    message.error(error.message || "文件上传失败");
+  } finally {
+    uploading.value = false;
   }
-  console.log("文件列表更新", fileList.value);
 };
+
 const close = () => {
+  if (uploading.value) return;
+
   emit("update:show", false);
-  localForm.value = {};
+  localForm.value = {
+    title: "",
+    file_id: null,
+    description: "",
+    content: "",
+  };
   fileList.value = [];
 };
 
 const handleSubmit = async(data) => {
+  if (uploading.value) {
+    message.warning("文件仍在解析，请稍候");
+    return;
+  }
+
   if (!localForm.value.title) {
     // 这里可以使用你项目中的消息提示组件
     message.warning("标题不能为空");
     return;
   }
-  if (props.type === "file" && fileList.value.length === 0 && !localForm.value.file_id) {
-    message.warning("请上传文件");
+  if (props.type === "file" && !localForm.value.file_id) {
+    message.warning("请等待文件上传并解析完成");
     return;
   }
   const payload = {
