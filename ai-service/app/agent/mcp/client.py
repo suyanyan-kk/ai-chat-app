@@ -15,7 +15,6 @@ def create_mcp_client():
     创建 MCP Client。
 
     MultiServerMCPClient 可以同时连接多个 MCP Server。
-    当前第一阶段只连接 demo server。
     """
 
     return MultiServerMCPClient(

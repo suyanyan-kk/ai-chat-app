@@ -1,6 +1,7 @@
 # app/agent/mcp/tools.py
 
 import asyncio
+import os
 import threading
 import traceback
 
@@ -16,6 +17,15 @@ from app.agent.mcp.client import (
 _mcp_tools_cache: Optional[list[BaseTool]] = None
 
 _mcp_tools_lock = threading.Lock()
+
+MCP_TOOL_LOAD_TIMEOUT_SECONDS = float(
+    os.getenv(
+        "MCP_TOOL_LOAD_TIMEOUT_SECONDS",
+        "8",
+    )
+)
+
+MCP_TOOL_LOAD_THREAD_GRACE_SECONDS = 3
 
 
 SAFE_MCP_TOOL_NAMES = {
@@ -68,6 +78,23 @@ SAFE_MCP_TOOL_NAMES = {
     "search_issues",
     "search_pull_requests",
     "search_repositories",
+
+    # ==========================
+    # PostgreSQL Readonly
+    # ==========================
+
+    "pg_list_tables",
+    "pg_describe_table",
+    "pg_query_readonly",
+    "pg_get_knowledge_files",
+
+    # ==========================
+    # Remote HTTP MCP
+    # ==========================
+
+    "remote_echo",
+    "remote_project_runtime_status",
+    "remote_add",
 }
 
 
@@ -146,7 +173,64 @@ async def load_mcp_tools() -> list[BaseTool]:
 
     client = create_mcp_client()
 
-    tools = await client.get_tools()
+    async def load_server_tools(
+        server_name: str,
+    ) -> list[BaseTool]:
+
+        try:
+
+            server_tools = await asyncio.wait_for(
+                client.get_tools(
+                    server_name=server_name
+                ),
+                timeout=MCP_TOOL_LOAD_TIMEOUT_SECONDS,
+            )
+
+        except asyncio.TimeoutError:
+
+            print(
+                "===== MCP server load timeout =====",
+                server_name,
+                f"{MCP_TOOL_LOAD_TIMEOUT_SECONDS}s",
+            )
+
+            return []
+
+        except Exception as error:
+
+            print(
+                "===== MCP server load failed =====",
+                server_name,
+                repr(error),
+            )
+
+            return []
+
+        print(
+            "===== MCP server tools loaded =====",
+            server_name,
+        )
+
+        return server_tools
+
+    server_names = list(
+        client.connections
+    )
+
+    tool_groups = await asyncio.gather(
+        *[
+            load_server_tools(
+                server_name
+            )
+            for server_name in server_names
+        ]
+    )
+
+    tools = [
+        tool
+        for tool_group in tool_groups
+        for tool in tool_group
+    ]
 
     print("===== MCP tools loaded raw =====")
 
@@ -189,7 +273,17 @@ def _run_async_in_new_thread() -> list[BaseTool]:
 
     thread.start()
 
-    thread.join()
+    thread.join(
+        MCP_TOOL_LOAD_TIMEOUT_SECONDS
+        + MCP_TOOL_LOAD_THREAD_GRACE_SECONDS
+    )
+
+    if thread.is_alive():
+
+        raise TimeoutError(
+            "MCP tools load thread did not finish "
+            f"within {MCP_TOOL_LOAD_TIMEOUT_SECONDS}s"
+        )
 
     if result["error"] is not None:
 

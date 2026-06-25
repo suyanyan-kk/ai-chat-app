@@ -17,6 +17,7 @@ async def agent_chat_stream(
                     content=query
                 )
             ],
+            # 每一轮开始先清空当前轮 sources
             "sources": [],
             "metadata": {}
         },

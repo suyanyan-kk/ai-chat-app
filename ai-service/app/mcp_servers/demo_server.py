@@ -27,12 +27,7 @@ def get_project_status() -> str:
 
     return """
 当前 AI 项目状态：
-
-1. 已完成企业级 RAG Workflow
-2. 已完成 Agent Runtime 第一阶段
-3. 已完成 Streaming Runtime
-4. 已完成 Conversation Memory
-5. 当前正在进入 MCP Runtime 阶段
+当前正在进入 MCP Runtime 阶段
 """
 
 

@@ -7,10 +7,40 @@ from langgraph.prebuilt import ToolNode
 from langchain_core.messages import ToolMessage
 
 
+def merge_sources(
+    old_sources,
+    new_sources,
+):
+    old_sources = old_sources or []
+    new_sources = new_sources or []
+
+    merged = []
+    seen = set()
+
+    for item in old_sources + new_sources:
+
+        key = json.dumps(
+            item,
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+
+        if key in seen:
+            continue
+
+        seen.add(
+            key
+        )
+
+        merged.append(
+            item
+        )
+
+    return merged
+
+
 class CustomToolNode(ToolNode):
     """
-    企业级 Tool Runtime Node。
-
     职责：
     1. 执行官方 ToolNode
     2. 解析 Tool 返回结果
@@ -18,14 +48,21 @@ class CustomToolNode(ToolNode):
         - ToolMessage.content = context
         - State.sources = sources
     4. 同时兼容 invoke / ainvoke
+    5. 如果是 MCP Tool 普通字符串，则原样交给 LLM
     """
 
     def _process_result(
         self,
+        state,
         result,
     ):
         print("===== custom tool node process result =====")
         print(result)
+
+        old_sources = state.get(
+            "sources",
+            []
+        )
 
         messages = result.get(
             "messages",
@@ -33,6 +70,7 @@ class CustomToolNode(ToolNode):
         )
 
         processed_messages = []
+
         new_sources = []
 
         for message in messages:
@@ -41,28 +79,48 @@ class CustomToolNode(ToolNode):
                 message,
                 ToolMessage,
             ):
+
                 processed_messages.append(
                     message
                 )
+
                 continue
 
             content = message.content
 
             try:
-                if isinstance(content, str):
-                    data = json.loads(content)
+
+                if isinstance(
+                    content,
+                    str,
+                ):
+
+                    data = json.loads(
+                        content
+                    )
+
                 else:
+
                     data = content
+
             except Exception:
+
+                # MCP 普通字符串结果会走这里
                 processed_messages.append(
                     message
                 )
+
                 continue
 
-            if not isinstance(data, dict):
+            if not isinstance(
+                data,
+                dict,
+            ):
+
                 processed_messages.append(
                     message
                 )
+
                 continue
 
             context = data.get(
@@ -75,11 +133,13 @@ class CustomToolNode(ToolNode):
             )
 
             if sources:
+
                 new_sources.extend(
                     sources
                 )
 
             if context:
+
                 new_message = ToolMessage(
                     content=context,
                     tool_call_id=message.tool_call_id,
@@ -91,17 +151,24 @@ class CustomToolNode(ToolNode):
                 processed_messages.append(
                     new_message
                 )
+
             else:
+
                 processed_messages.append(
                     message
                 )
 
-        print("===== custom tool node sources =====")
-        print(new_sources)
+        merged_sources = merge_sources(
+            old_sources,
+            new_sources,
+        )
+
+        print("===== custom tool node current turn sources =====")
+        print(merged_sources)
 
         return {
             "messages": processed_messages,
-            "sources": new_sources,
+            "sources": merged_sources,
         }
 
     def invoke(
@@ -113,11 +180,12 @@ class CustomToolNode(ToolNode):
 
         result = super().invoke(
             state,
-            config
+            config,
         )
 
         return self._process_result(
-            result
+            state,
+            result,
         )
 
     async def ainvoke(
@@ -129,192 +197,10 @@ class CustomToolNode(ToolNode):
 
         result = await super().ainvoke(
             state,
-            config
+            config,
         )
 
         return self._process_result(
-            result
+            state,
+            result,
         )
-
-
-# # app/agent/graph/custom_tool_node.py
-
-# from langgraph.prebuilt import ToolNode
-
-# import json
-# import traceback
-
-# class CustomToolNode(ToolNode):
-
-#     def invoke(
-#         self,
-#         state,
-#         config=None
-#     ):
-
-#         print("===== tool node start =====")
-
-#         result = super().invoke(
-#             state,
-#             config
-#         )
-#         print("===== tool result =====")
-#         print(result)
-
-#         old_sources = state.get(
-#             "sources",
-#             []
-#         )
-
-#         new_sources = []
-
-#         for message in result["messages"]:
-#              # Tool返回内容
-#             content = message.content
-
-#             # =========================
-#             # 尝试解析 JSON
-#             # =========================
-#             try:
-
-#                 data = json.loads(content)
-
-#                 # -------------------------
-#                 # context
-#                 # -------------------------
-#                 if isinstance(data, dict):    
-#                     if "context" in data:
-
-#                         message.content = data["context"]
-
-                
-#                     # -------------------------
-#                     # sources
-#                     # -------------------------
-#                     if "sources" in data:
-
-#                         new_sources.extend(
-#                             data["sources"]
-#                         )
-
-#             except json.JSONDecodeError:
-
-#                 pass
-
-#         # =========================
-#         # 去重
-#         # =========================
-
-#         merged_sources = []
-
-#         seen = set()
-
-#         for item in old_sources + new_sources:
-
-#             key = json.dumps(
-#                 item,
-#                 ensure_ascii=False,
-#                 sort_keys=True
-#             )
-
-#             if key in seen:
-#                 continue
-
-#             seen.add(key)
-
-#             merged_sources.append(item)
-        
-#         print("===== tool node end =====")
-#         print("========== merged_sources ==========")
-#         print(merged_sources)
-#         return {
-
-#             "messages": result["messages"],
-
-#             "sources": merged_sources
-
-#         }
-    
-
-
-
-# class CustomToolNode(ToolNode):
-
-#     def invoke(
-#         self,
-#         state,
-#         config=None
-#     ):
-
-#         print("===== tool node start =====")
-
-#         try:
-
-#             result = super().invoke(
-#                 state,
-#                 config
-#             )
-
-#             print("===== tool result =====")
-#             print(result)
-
-#             sources = []
-
-#             for message in result["messages"]:
-
-#                 # Tool返回内容
-#                 content = message.content
-
-#                 # =========================
-#                 # 尝试解析 JSON
-#                 # =========================
-#                 try:
-
-#                     data = json.loads(content)
-
-#                     # -------------------------
-#                     # context
-#                     # -------------------------
-#                     if isinstance(data, dict):
-
-#                         if "context" in data:
-
-#                             message.content = (
-#                                 data["context"]
-#                             )
-
-#                         # -------------------------
-#                         # sources
-#                         # -------------------------
-#                         if "sources" in data:
-
-#                             sources.extend(
-#                                 data["sources"]
-#                             )
-
-#                 except json.JSONDecodeError:
-
-#                     # 普通字符串Tool
-#                     # 例如天气、时间、计算器
-#                     pass
-
-#             print("===== tool node end =====")
-
-#             return {
-
-#                 "messages":
-#                     result["messages"],
-
-#                 "sources":
-#                     sources
-
-#             }
-
-#         except Exception as e:
-
-#             print("===== tool exception =====")
-#             print(e)
-
-#             traceback.print_exc()
-
-#             raise

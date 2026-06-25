@@ -86,22 +86,15 @@ except Exception as e:
 # ==========================
 
 tools = [
-
     *rag_tools,
-
     *local_tools,
-
     *mcp_tools,
-
 ]
 
 
 llm_tools = [
-
     *local_tools,
-
     *mcp_tools,
-
 ]
 
 
@@ -109,6 +102,14 @@ available_tool_names = {
     tool.name
     for tool in tools
 }
+
+
+print("===== Agent available tools =====")
+print(
+    sorted(
+        available_tool_names
+    )
+)
 
 
 llm_with_tools = model.bind_tools(
@@ -123,7 +124,10 @@ llm_with_tools = model.bind_tools(
 def get_latest_user_message(
     messages,
 ):
-    for message in reversed(messages):
+
+    for message in reversed(
+        messages
+    ):
 
         if isinstance(
             message,
@@ -138,6 +142,7 @@ def get_latest_user_message(
 def get_latest_user_index(
     messages,
 ):
+
     for index in range(
         len(messages) - 1,
         -1,
@@ -152,6 +157,31 @@ def get_latest_user_index(
             return index
 
     return -1
+
+
+def has_any_tool_after_latest_user(
+    messages,
+):
+    latest_user_index = get_latest_user_index(
+        messages
+    )
+
+    if latest_user_index == -1:
+
+        return False
+
+    for message in messages[
+        latest_user_index + 1:
+    ]:
+
+        if isinstance(
+            message,
+            ToolMessage,
+        ):
+
+            return True
+
+    return False
 
 
 def has_tool_after_latest_user(
@@ -170,45 +200,34 @@ def has_tool_after_latest_user(
         latest_user_index + 1:
     ]:
 
-        if (
-            isinstance(
-                message,
-                ToolMessage,
-            )
-            and message.name == tool_name
-        ):
+        if isinstance(
+            message,
+            ToolMessage,
+        ) and message.name == tool_name:
 
             return True
 
     return False
 
 
-# ==========================
-# MCP Router
-# ==========================
-
-def build_mcp_tool_call(
-    tool_route,
+def build_tool_call_message(
+    tool_route: dict,
 ):
+
     tool_name = tool_route["name"]
 
     tool_args = tool_route.get(
         "args",
-        {}
+        {},
     )
 
     return AIMessage(
-
         content="",
-
         tool_calls=[
             {
                 "name": tool_name,
-
                 "args": tool_args,
-
-                "id": f"call_{tool_name}_{uuid4().hex}",
-
+                "id": f"tool_call_{uuid4().hex}",
                 "type": "tool_call",
             }
         ],
@@ -233,16 +252,16 @@ def get_mcp_tool_route(
 
     user_input = latest_user_message.content
 
-    route = route_mcp_tool_call(
+    tool_route = route_mcp_tool_call(
         user_input=user_input,
         available_tool_names=available_tool_names,
     )
 
-    if route is None:
+    if tool_route is None:
 
         return None
 
-    tool_name = route["name"]
+    tool_name = tool_route["name"]
 
     if has_tool_after_latest_user(
         messages,
@@ -251,12 +270,8 @@ def get_mcp_tool_route(
 
         return None
 
-    return route
+    return tool_route
 
-
-# ==========================
-# RAG Router
-# ==========================
 
 KNOWLEDGE_SCOPE_KEYWORDS = [
     "知识库",
@@ -267,12 +282,12 @@ KNOWLEDGE_SCOPE_KEYWORDS = [
 
 
 DOCUMENT_SCOPE_KEYWORDS = [
-    "文档",
-    "资料",
-    "文件",
     "内部资料",
     "上传文档",
     "上传的文档",
+    "文档",
+    "资料",
+    "文件",
 ]
 
 
@@ -327,8 +342,7 @@ def is_knowledge_search_intent(
     user_input: str,
 ):
     """
-    只有用户明确要查知识库 / 上传资料时，才进入 RAG。
-    普通聊天、MCP 问答、天气、时间、计算都不走 search_knowledge。
+    只有用户明确要求查询知识库或上传资料时，才进入 RAG。
     """
 
     if not isinstance(
@@ -416,49 +430,54 @@ def should_force_search_knowledge(
     # 关键：
     # 如果当前用户问题已经执行过任意 Tool，
     # 就不要再强制调用 search_knowledge。
+    # 否则 MCP 工具执行后，又会被 RAG 抢走。
     if has_any_tool_after_latest_user(
         messages
     ):
 
         return False
 
-    return True
+    # 如果已经执行过 search_knowledge，也不要重复执行
+    if has_tool_after_latest_user(
+        messages,
+        "search_knowledge",
+    ):
+
+        return False
+
+    return is_knowledge_search_intent(
+        latest_user_message.content
+    )
+
 
 def build_search_knowledge_call(
     state,
 ):
+    messages = state.get(
+        "messages",
+        []
+    )
+
     latest_user_message = get_latest_user_message(
-        state.get(
-            "messages",
-            []
-        )
+        messages
     )
 
     query = latest_user_message.content
 
     return AIMessage(
-
         content="",
-
         tool_calls=[
             {
                 "name": "search_knowledge",
-
                 "args": {
-                    "query": query
+                    "query": query,
                 },
-
-                "id": f"call_search_knowledge_{uuid4().hex}",
-
+                "id": f"tool_call_{uuid4().hex}",
                 "type": "tool_call",
             }
         ],
     )
 
-
-# ==========================
-# Agent Node
-# ==========================
 
 def agent_node(
     state,
@@ -466,35 +485,35 @@ def agent_node(
     print("===== agent node =====")
 
     # ==========================
-    # 1. MCP Router 优先
+    # 1. MCP 确定性路由优先
     # ==========================
 
     mcp_route = get_mcp_tool_route(
         state
     )
 
-    if mcp_route is not None:
+    if mcp_route:
 
         print("===== force MCP tool =====")
         print(mcp_route)
 
         return {
             "messages": [
-                build_mcp_tool_call(
+                build_tool_call_message(
                     mcp_route
                 )
             ]
         }
 
     # ==========================
-    # 2. RAG Router
+    # 2. RAG 兜底
     # ==========================
 
     if should_force_search_knowledge(
         state
     ):
 
-        print("===== force search_knowledge =====")
+        print("===== force search_knowledge tool =====")
 
         return {
             "messages": [
@@ -505,7 +524,7 @@ def agent_node(
         }
 
     # ==========================
-    # 3. Normal LLM
+    # 3. 正常 LLM 回答
     # ==========================
 
     messages = build_messages(
@@ -521,26 +540,3 @@ def agent_node(
             response
         ]
     }
-def has_any_tool_after_latest_user(
-    messages,
-):
-    latest_user_index = get_latest_user_index(
-        messages
-    )
-
-    if latest_user_index == -1:
-
-        return False
-
-    for message in messages[
-        latest_user_index + 1:
-    ]:
-
-        if isinstance(
-            message,
-            ToolMessage,
-        ):
-
-            return True
-
-    return False

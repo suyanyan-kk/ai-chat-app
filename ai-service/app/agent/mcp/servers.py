@@ -15,9 +15,16 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 DEMO_MCP_SERVER_PATH = (
     PROJECT_ROOT
-    /"app"
+    / "app"
     / "mcp_servers"
     / "demo_server.py"
+)
+
+POSTGRES_MCP_SERVER_PATH = (
+    PROJECT_ROOT
+    /"app"
+    / "mcp_servers"
+    / "postgres_server.py"
 )
 
 FILESYSTEM_ROOT = (
@@ -30,19 +37,9 @@ GITHUB_TOKEN = os.getenv(
 )
 
 
-print("===== MCP server config =====")
-print("PROJECT_ROOT:", PROJECT_ROOT)
-print("DEMO_MCP_SERVER_PATH:", DEMO_MCP_SERVER_PATH)
-print("DEMO_SERVER_EXISTS:", DEMO_MCP_SERVER_PATH.exists())
-print("FILESYSTEM_ROOT:", FILESYSTEM_ROOT)
-print("FILESYSTEM_ROOT_EXISTS:", FILESYSTEM_ROOT.exists())
-print("GITHUB_TOKEN_EXISTS:", bool(GITHUB_TOKEN))
-print("PYTHON:", sys.executable)
-
-
 FILESYSTEM_ROOT.mkdir(
     parents=True,
-    exist_ok=True
+    exist_ok=True,
 )
 
 
@@ -71,7 +68,6 @@ if DEMO_MCP_SERVER_PATH.exists():
         "cwd": str(
             PROJECT_ROOT
         ),
-
     }
 
 
@@ -96,15 +92,11 @@ MCP_SERVER_CONFIGS["filesystem"] = {
     "cwd": str(
         PROJECT_ROOT
     ),
-
 }
 
 
 # ==========================
 # GitHub MCP Server
-#
-# 第一阶段只加载只读类 toolsets：
-# repos / issues / pull_requests
 # ==========================
 
 if GITHUB_TOKEN:
@@ -132,11 +124,49 @@ if GITHUB_TOKEN:
         "cwd": str(
             PROJECT_ROOT
         ),
-
     }
 
-else:
 
-    print(
-        "===== GitHub MCP skipped: GITHUB_PERSONAL_ACCESS_TOKEN not found ====="
-    )
+# ==========================
+# PostgreSQL MCP Server
+# ==========================
+
+if POSTGRES_MCP_SERVER_PATH.exists():
+
+    MCP_SERVER_CONFIGS["postgres"] = {
+
+        "transport": "stdio",
+
+        "command": sys.executable,
+
+        "args": [
+            str(
+                POSTGRES_MCP_SERVER_PATH
+            )
+        ],
+
+        "cwd": str(
+            PROJECT_ROOT
+        ),
+    }
+
+# ==========================
+# Remote Streamable HTTP MCP Server
+# ==========================
+
+MCP_SERVER_CONFIGS["remote_http"] = {
+
+    "transport": "streamable_http",
+
+    "url": "http://127.0.0.1:8765/mcp",
+
+}
+print("===== MCP server config =====")
+print("PROJECT_ROOT:", PROJECT_ROOT)
+print("DEMO_SERVER_EXISTS:", DEMO_MCP_SERVER_PATH.exists())
+print("POSTGRES_SERVER_EXISTS:", POSTGRES_MCP_SERVER_PATH.exists())
+print("FILESYSTEM_ROOT:", FILESYSTEM_ROOT)
+print("FILESYSTEM_ROOT_EXISTS:", FILESYSTEM_ROOT.exists())
+print("GITHUB_TOKEN_EXISTS:", bool(GITHUB_TOKEN))
+print("MCP_SERVER_NAMES:", list(MCP_SERVER_CONFIGS.keys()))
+print("PYTHON:", sys.executable)

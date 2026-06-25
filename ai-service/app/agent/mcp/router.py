@@ -140,6 +140,109 @@ def route_mcp_tool_call(
     )
 
     # ==========================
+    # Remote HTTP MCP: echo
+    # ==========================
+
+    if (
+        "remote" in text
+        and "echo" in text
+    ) or (
+        "远程" in text
+        and "echo" in text
+    ):
+
+        tool_name = find_tool_name(
+            available_tool_names,
+            [
+                "remote_echo",
+            ],
+        )
+
+        if tool_name:
+
+            echo_text = user_input
+
+            for keyword in [
+                "输入",
+                "内容",
+                "text",
+            ]:
+                if keyword in echo_text:
+
+                    echo_text = echo_text.split(
+                        keyword,
+                        1,
+                    )[-1].strip()
+
+                    break
+
+            return {
+                "name": tool_name,
+                "args": {
+                    "text": echo_text,
+                },
+            }
+
+    # ==========================
+    # Remote HTTP MCP: status
+    # ==========================
+
+    if (
+        "remote_project_runtime_status" in text
+        or "remote http mcp 状态" in text
+        or "远程 mcp 状态" in text
+        or "远程mcp状态" in text
+        or (
+            "远程" in text
+            and "mcp" in text
+            and (
+                "状态" in text
+                or "status" in text
+            )
+        )
+    ):
+
+        tool_name = find_tool_name(
+            available_tool_names,
+            [
+                "remote_project_runtime_status",
+            ],
+        )
+
+        if tool_name:
+
+            return {
+                "name": tool_name,
+                "args": {},
+            }
+
+    # ==========================
+    # Remote HTTP MCP: add
+    # ==========================
+
+    if (
+        "remote_add" in text
+        or "远程加法" in text
+        or "远程 mcp 加法" in text
+    ):
+
+        tool_name = find_tool_name(
+            available_tool_names,
+            [
+                "remote_add",
+            ],
+        )
+
+        if tool_name:
+
+            return {
+                "name": tool_name,
+                "args": {
+                    "a": 3,
+                    "b": 5,
+                },
+            }
+    # ==========================
     # Demo: echo
     # ==========================
 
@@ -422,6 +525,151 @@ def route_mcp_tool_call(
                     "repo": repo["repo"],
                     "state": "open",
                     "per_page": 5,
+                },
+            }
+        # ==========================
+    # PostgreSQL: list tables
+    # ==========================
+
+    if (
+        "postgres" in text
+        or "postgresql" in text
+        or "数据库" in user_input
+    ) and (
+        "表" in user_input
+        or "tables" in text
+        or "list tables" in text
+    ):
+
+        tool_name = find_tool_name(
+            available_tool_names,
+            [
+                "pg_list_tables",
+            ],
+        )
+
+        if tool_name:
+
+            return {
+                "name": tool_name,
+                "args": {},
+            }
+
+    # ==========================
+    # PostgreSQL: describe table
+    # ==========================
+
+    if (
+        "表结构" in user_input
+        or "describe table" in text
+        or "describe" in text
+    ):
+
+        tool_name = find_tool_name(
+            available_tool_names,
+            [
+                "pg_describe_table",
+            ],
+        )
+
+        if tool_name:
+
+            table_name = None
+
+            known_tables = [
+                "knowledge_base",
+                "knowledge_file",
+                "knowledge_chunk",
+            ]
+
+            for name in known_tables:
+
+                if name in user_input:
+
+                    table_name = name
+                    break
+
+            if table_name is None:
+
+                table_name = "knowledge_file"
+
+            return {
+                "name": tool_name,
+                "args": {
+                    "table_name": table_name,
+                },
+            }
+
+    # ==========================
+    # PostgreSQL: knowledge files
+    # ==========================
+
+    if (
+        "知识库文件" in user_input
+        or "knowledge_file" in text
+        or "文件列表" in user_input
+    ):
+
+        tool_name = find_tool_name(
+            available_tool_names,
+            [
+                "pg_get_knowledge_files",
+            ],
+        )
+
+        if tool_name:
+
+            return {
+                "name": tool_name,
+                "args": {
+                    "limit": 10,
+                },
+            }
+
+    # ==========================
+    # PostgreSQL: readonly SQL
+    # ==========================
+
+    if (
+        "执行sql" in text
+        or "执行 sql" in text
+        or "查询sql" in text
+        or "查询 sql" in text
+    ):
+
+        tool_name = find_tool_name(
+            available_tool_names,
+            [
+                "pg_query_readonly",
+            ],
+        )
+
+        if tool_name:
+
+            sql = user_input
+
+            for keyword in [
+                "执行 SQL",
+                "执行sql",
+                "查询 SQL",
+                "查询sql",
+                "SQL:",
+                "sql:",
+            ]:
+                if keyword in sql:
+
+                    sql = sql.split(
+                        keyword,
+                        1,
+                    )[-1].strip()
+
+                    break
+
+            return {
+                "name": tool_name,
+                "args": {
+                    "sql": sql,
+                    "limit": 20,
                 },
             }
 
