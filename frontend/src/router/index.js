@@ -13,7 +13,20 @@ import LangchainPractice from '../views/test/langchainPractice.vue'
 import QaContent from '../views/chat/index.vue'
 // 资料库管理
 import KnowledgeBase from '../views/knowledgeBase/index.vue'
+import LoginView from '../views/auth/LoginView.vue'
+import pinia from '@/stores/pinia'
+import { useAuthStore } from '@/stores/modules/authStore'
+
 const routes = [
+  {
+    path: '/login',
+    name: 'login',
+    component: LoginView,
+    meta: {
+      public: true,
+      hideInNav: true
+    }
+  },
   {
     path: '/',
     name: 'home',
@@ -83,6 +96,35 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+router.beforeEach(async (to) => {
+  const authStore = useAuthStore(pinia)
+  if (!authStore.initialized) {
+    await authStore.initialize()
+  }
+
+  if (to.meta.public) {
+    if (
+      to.name === "login"
+      && authStore.isAuthenticated
+    ) {
+      return "/"
+    }
+
+    return true
+  }
+
+  if (!authStore.isAuthenticated) {
+    return {
+      name: "login",
+      query: {
+        redirect: to.fullPath
+      }
+    }
+  }
+
+  return true
 })
 
 export default router

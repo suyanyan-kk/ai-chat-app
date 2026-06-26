@@ -1,6 +1,7 @@
 <template>
   <n-message-provider>
-  <div class="layout">
+  <router-view v-if="isPublicRoute" />
+  <div v-else class="layout">
     <!-- 一级菜单 -->
     <aside :class="['sidebar']">
       <div class="logo-box" @click="goHome">
@@ -45,6 +46,29 @@
             <span v-if="index < titleList.length - 1"> / </span>
           </span>
         </div>
+
+        <div class="account">
+          <div class="account-copy">
+            <strong>{{ authStore.user?.display_name }}</strong>
+            <span>{{ authStore.user?.email }}</span>
+          </div>
+
+          <n-tooltip trigger="hover">
+            <template #trigger>
+              <n-button
+                quaternary
+                circle
+                aria-label="退出登录"
+                @click="handleLogout"
+              >
+                <template #icon>
+                  <n-icon :component="LogOutOutline" />
+                </template>
+              </n-button>
+            </template>
+            退出登录
+          </n-tooltip>
+        </div>
       </header>
 
       <main class="content">
@@ -56,14 +80,25 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { LogOutOutline } from "@vicons/ionicons5";
+
+import { useAuthStore } from "@/stores/modules/authStore";
 
 const route = useRoute();
 const router = useRouter();
+const authStore = useAuthStore();
+const isPublicRoute = computed(
+  () => Boolean(route.meta.public)
+);
 
 // ⭐ 只取一级路由（关键！！）
-const rootRoutes = computed(() => router.options.routes.filter((r) => r.meta?.title));
+const rootRoutes = computed(() =>
+  router.options.routes.filter(
+    (r) => r.meta?.title && !r.meta?.hideInNav
+  )
+);
 
 const titleList = computed(() =>
   route.matched.filter((r) => r.meta?.title).map((r) => r.meta.title)
@@ -74,6 +109,11 @@ const isActiveGroup = (parentRoute) => {
 const goHome = () => {
   router.push('/')
 }
+
+const handleLogout = async () => {
+  await authStore.logout();
+  await router.replace("/login");
+};
 </script>
 <style scoped>
 .layout {
@@ -176,6 +216,7 @@ const goHome = () => {
 .topbar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 16px 24px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(8, 12, 27, 0.55);
@@ -186,6 +227,34 @@ const goHome = () => {
   font-weight: 600;
   font-size: 1.05rem;
   margin-left: 14px;
+}
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.account-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.25;
+}
+
+.account-copy strong {
+  font-size: 13px;
+}
+
+.account-copy span {
+  color: rgba(238, 241, 255, 0.56);
+  font-size: 11px;
+}
+
+@media (max-width: 720px) {
+  .account-copy {
+    display: none;
+  }
 }
 
 .content {

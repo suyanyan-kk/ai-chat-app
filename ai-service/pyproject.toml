@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 
 dependencies = [
+    "bcrypt>=5.0.0",
     "chromadb>=0.5.23",
     "fastapi>=0.135.1",
     "langchain-chroma>=0.1.4",

@@ -1,5 +1,9 @@
 // ⭐ 核心请求（带拦截器）
 import { InterceptorManager } from "./interceptor"
+import {
+  getAccessToken,
+  refreshAccessToken
+} from "./authSession"
 
 const BASE_URL = "/api"
 
@@ -8,7 +12,7 @@ const responseInterceptors = new InterceptorManager()
 
 // ⭐ 注册默认拦截器（自动加 token）
 requestInterceptors.use(async (config) => {
-  const token = localStorage.getItem("token")
+  const token = getAccessToken()
 
   const headers = {
     ...(config.headers || {}),
@@ -28,13 +32,27 @@ requestInterceptors.use(async (config) => {
 
 // ⭐ 请求日志
 requestInterceptors.use(async (config) => {
-  console.log("📤 请求:", config)
+  if (import.meta.env.DEV) {
+    console.debug(
+      "📤 请求:",
+      config.method,
+      config.url
+    )
+  }
+
   return config
 })
 
 // ⭐ 响应日志
 responseInterceptors.use(async (res) => {
-  console.log("📥 响应:", res)
+  if (import.meta.env.DEV) {
+    console.debug(
+      "📥 响应:",
+      res.status,
+      res.url
+    )
+  }
+
   return res
 })
 
@@ -42,16 +60,37 @@ responseInterceptors.use(async (res) => {
 responseInterceptors.use(async (res) => {
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(text || "请求失败")
+    let message = text || "请求失败"
+
+    try {
+      const data = JSON.parse(text)
+      message = data.detail || data.message || message
+    } catch {
+      // Keep the original response text.
+    }
+
+    throw new Error(message)
   }
 
   return res
 })
 
-export async function request(url, options = {}) {
+const performFetch = async (config) => {
+  const {
+    url,
+    skipAuthRefresh,
+    ...fetchOptions
+  } = config
+
+  return fetch(url, fetchOptions)
+}
+
+
+export async function fetchWithAuth(url, options = {}) {
   let config = {
     url: BASE_URL + url,
     method: "GET",
+    credentials: "include",
     ...options
   }
 
@@ -61,11 +100,35 @@ export async function request(url, options = {}) {
   let response
 
   try {
-    response = await fetch(config.url, config)
+    response = await performFetch(config)
   } catch (err) {
     console.error("❌ 网络错误:", err)
     throw err
   }
+
+  if (
+    response.status === 401
+    && !config.skipAuthRefresh
+    && !url.startsWith("/auth/")
+  ) {
+    await refreshAccessToken()
+
+    config.headers = {
+      ...(config.headers || {}),
+      Authorization: `Bearer ${getAccessToken()}`
+    }
+    response = await performFetch(config)
+  }
+
+  return response
+}
+
+
+export async function request(url, options = {}) {
+  let response = await fetchWithAuth(
+    url,
+    options
+  )
 
   // 👉 执行响应拦截
   response = await responseInterceptors.run(response)
