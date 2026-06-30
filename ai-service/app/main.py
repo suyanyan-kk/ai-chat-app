@@ -18,6 +18,7 @@ import uvicorn
 from app.api.chunk_debug import router as chunk_router
 from app.api.retrieval_debug import router as debug_router
 from app.core.config import settings
+import os
 
 app = FastAPI(
     title="AI Service",
@@ -25,10 +26,28 @@ app = FastAPI(
     version="1.0.0",
     root_path=settings.ROOT_PATH
 )
-
+# =========================
+# Static Upload Files
+# =========================
+#
+# 外部访问：
+#   /api/uploads/xxx.pdf
+#
+# Caddy 转发后：
+#   /uploads/xxx.pdf
+#
+# FastAPI 挂载：
+#   /uploads -> settings.UPLOAD_DIR
+# =========================
+os.makedirs(
+    settings.UPLOAD_DIR,
+    exist_ok=True
+)
 app.mount(
     "/uploads",
-    StaticFiles(directory=str(settings.UPLOAD_DIR)),
+    StaticFiles(
+        directory=settings.UPLOAD_DIR
+    ),
     name="uploads"
 )
 

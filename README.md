@@ -25,3 +25,7 @@ npm run dev
 ### 后端
 cd ai-service
 uv run uvicorn app.main:app --reload
+### docker build
+cd /Users/suyanyan/Documents/study/AI/AI_PY_Project
+
+docker compose -f docker-compose.prod.yml up -d --build

@@ -1,9 +1,9 @@
-
 :80 {
-    route /api/* {
-        uri strip_prefix /api #把 /api 前缀去掉
-        reverse_proxy backend:8000
-    }
+	route /api/* {
+		# FastAPI 通过 ROOT_PATH=/api 识别反向代理前缀，
+		# 因此必须把原始 /api 路径传给后端。
+		reverse_proxy backend:8000
+	}
 
-    reverse_proxy frontend:80
+	reverse_proxy frontend:80
 }
