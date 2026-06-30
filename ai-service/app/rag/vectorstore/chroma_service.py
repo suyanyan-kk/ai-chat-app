@@ -4,7 +4,7 @@ from app.rag.embedding.embedding_service import (
     embedding_model 
 )
 from app.utils.cleanMetadata  import  clean_metadata
- 
+from app.core.config import settings
 """
 Chroma 向量数据库服务
 
@@ -19,12 +19,11 @@ vector storage
 similarity search
 """
 
-
 # 创建 chroma 向量数据库
 vector_store = Chroma(
 
     # chroma 数据库存储目录
-    persist_directory="./chroma_db",
+    persist_directory=settings.CHROMA_PERSIST_DIR,
 
     # embedding 模型
     embedding_function=embedding_model,

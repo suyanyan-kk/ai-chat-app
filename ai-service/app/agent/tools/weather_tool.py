@@ -4,6 +4,7 @@ import requests
 from dotenv import load_dotenv
 
 from langchain.tools import tool
+from app.core.config import settings
 
 load_dotenv()
 
@@ -16,9 +17,7 @@ def get_weather(
     查询城市天气
     """
 
-    api_key = os.getenv(
-        "OPENWEATHER_API_KEY"
-    )
+    api_key = settings.OPENWEATHER_API_KEY
 
     url = (
         "https://api.openweathermap.org/data/2.5/weather"

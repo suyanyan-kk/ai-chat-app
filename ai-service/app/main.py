@@ -17,13 +17,13 @@ from app.core.logger import logger
 import uvicorn
 from app.api.chunk_debug import router as chunk_router
 from app.api.retrieval_debug import router as debug_router
+from app.core.config import settings
+
 app = FastAPI()
 
-UPLOAD_DIR = Path(__file__).resolve().parent / "rag" / "uploads"
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 app.mount(
     "/uploads",
-    StaticFiles(directory=str(UPLOAD_DIR)),
+    StaticFiles(directory=str(settings.UPLOAD_DIR)),
     name="uploads"
 )
 

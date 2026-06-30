@@ -3,7 +3,9 @@ __pycache__/
 *.pyc
 .venv/
 .env
-
+.env.production
+!.env.example
+!.env.production.example
 # SQLite
 *.db
 

@@ -1,0 +1,73 @@
+# 整个项目一键启动配置
+services:
+  postgres:
+    image: postgres:16 #启动一个 PostgreSQL 16 数据库
+    container_name: ai_postgres 
+    restart: always
+    environment: #初始化数据库：数据库名 用户名 密码
+      POSTGRES_DB: ai_service
+      POSTGRES_USER: ai_user
+      POSTGRES_PASSWORD: ai_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data #PostgreSQL 数据存到 Docker Volume 里。
+    networks:
+      - ai_network
+
+  backend: #用 ai-service/Dockerfile 构建后端镜像
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: ai_backend
+    restart: always
+    env_file:
+      - ./ai-service/.env.production #后端启动时读取线上环境变量
+    volumes:
+      - backend_data:/app/data #后端的 /app/data 目录持久化
+    depends_on: #先启动 PostgreSQL，再启动后端
+      - postgres
+    networks:
+      - ai_network
+
+  frontend: #用 frontend/Dockerfile 构建前端镜像
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ai_frontend
+    restart: always
+    depends_on: #前端依赖后端先启动。
+      - backend
+    networks:
+      - ai_network
+
+#启动 Caddy 反向代理
+#负责：
+  # 接收浏览器请求
+  # 转发 /api 到后端
+  # 转发其他页面请求到前端
+  # 处理 HTTPS
+  caddy: 
+    image: caddy:2
+    container_name: ai_caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - ai_network
+#持久化数据卷
+volumes:
+  postgres_data: #PostgreSQL 数据
+  backend_data:  #Chroma 数据 + 上传文件
+  caddy_data:    #HTTPS 证书
+  caddy_config:  #Caddy 配置缓存
+
+networks:
+  ai_network:
+    driver: bridge

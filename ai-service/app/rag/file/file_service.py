@@ -11,15 +11,7 @@ from app.rag.chunk.chunk_service import (
 from app.utils.parsers.parser_factory import (
     ParserFactory
 )
-
-BASE_DIR = os.path.dirname(
-    os.path.dirname(__file__)
-)
-
-UPLOAD_DIR = os.path.join(
-    BASE_DIR,
-    "uploads"
-)
+from app.core.config import settings
 
 
 async def save_upload_file(file, db):
@@ -45,7 +37,7 @@ async def save_upload_file(file, db):
     # 4 create upload dir
     # =========================
     os.makedirs(
-        UPLOAD_DIR,
+        settings.UPLOAD_DIR,
         exist_ok=True
     )
 
@@ -53,7 +45,7 @@ async def save_upload_file(file, db):
     # 5 file path
     # =========================
     file_path = os.path.join(
-        UPLOAD_DIR,
+        settings.UPLOAD_DIR,
         uuid_name
     )
 

@@ -3,12 +3,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
-import os
-
+from app.core.config import settings
 # 加载 .env
 load_dotenv()
 #获取数据库地址 读取环境变量
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = settings.DATABASE_URL
 # SQLALCHEMY_DATABASE_URL = (
 #     "postgresql://suyanyan@localhost:5432/ai_project"
 # )
@@ -18,10 +17,36 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 # 创建 engine
 # echo=True 会在控制台输出 SQLAlchemy 执行的 SQL 语句，方便调试和查看数据库操作的细节
-engine = create_engine(
-    DATABASE_URL, 
-    echo=True
+# =========================
+# Engine
+# =========================
+#
+# SQLite 和 PostgreSQL 的连接参数不一样。
+#
+# SQLite 需要：
+#   connect_args={"check_same_thread": False}
+#
+# PostgreSQL 不需要这个参数。
+# =========================
+
+if DATABASE_URL.startswith("sqlite"):
+
+    engine = create_engine(
+        DATABASE_URL,
+        echo=True,
+        connect_args={
+            "check_same_thread": False
+        }
     )
+
+else:
+
+    engine = create_engine(
+        DATABASE_URL,
+        echo=True,
+        pool_pre_ping=True
+    )
+
 # 创建 SessionLocal 类，绑定到 engine 上，autocommit=False 表示需要手动提交事务，autoflush=False 表示不会自动刷新对象状态到数据库
 SessionLocal = sessionmaker(
     autocommit=False,

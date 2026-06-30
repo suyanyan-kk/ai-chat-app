@@ -1,0 +1,11 @@
+
+#控制线上访问规则。
+# 线上反向代理 / HTTPS 配置
+:80 {
+    route /api/* {
+        uri strip_prefix /api #把 /api 前缀去掉
+        reverse_proxy backend:8000
+    }
+
+    reverse_proxy frontend:80
+}
