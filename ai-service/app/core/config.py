@@ -46,7 +46,21 @@ class Settings:
         "APP_ENV",
         "development"
     )
+    # =========================
+    # API Root Path
+    # =========================
+    #
+    # 本地直接访问后端：
+    #   ROOT_PATH=""
+    #
+    # Docker / 线上通过 Caddy 访问：
+    #   ROOT_PATH="/api"
+    # =========================
 
+    ROOT_PATH: str = os.getenv(
+        "ROOT_PATH",
+        ""
+    )
     # =========================
     # LLM
     # =========================

@@ -19,7 +19,12 @@ from app.api.chunk_debug import router as chunk_router
 from app.api.retrieval_debug import router as debug_router
 from app.core.config import settings
 
-app = FastAPI()
+app = FastAPI(
+    title="AI Service",
+    description="RAG + Agent AI Service",
+    version="1.0.0",
+    root_path=settings.ROOT_PATH
+)
 
 app.mount(
     "/uploads",

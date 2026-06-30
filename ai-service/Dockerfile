@@ -5,23 +5,32 @@ WORKDIR /app
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
-    git \
-    libgomp1 \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        curl \
+        git \
+        libgomp1 \
+    || (apt-get update --fix-missing \
+        && apt-get install -y --no-install-recommends \
+            build-essential \
+            curl \
+            git \
+            libgomp1) \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir uv
 
-COPY . .
+COPY pyproject.toml ./
 
-RUN if [ ! -f README.md ]; then echo "AI Service" > README.md; fi
+RUN uv pip compile pyproject.toml --no-cache -o requirements.txt \
+    && uv pip install --system --no-cache-dir -r requirements.txt
 
-RUN uv pip install --system .
+COPY app ./app
 
 RUN mkdir -p /app/data/chroma_db
 RUN mkdir -p /app/data/uploads
+RUN mkdir -p /app/logs
 
 EXPOSE 8000
 

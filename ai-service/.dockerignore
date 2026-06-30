@@ -8,6 +8,10 @@ __pycache__
 !.env.example
 !.env.production.example
 
+data
+logs
+mcp_workspace
+
 chroma_db
 uploads
 
