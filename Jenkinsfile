@@ -80,10 +80,10 @@ pipeline {
                     sh '''
                         ssh -o StrictHostKeyChecking=accept-new ${DEPLOY_USER}@${DEPLOY_HOST} "
                             cd ${DEPLOY_DIR} && \
-                            docker compose -f docker-compose.prod.yml build --progress=plain backend && \
-                            docker compose -f docker-compose.prod.yml build --progress=plain frontend && \
-                            docker compose -f docker-compose.prod.yml up -d && \
-                            docker compose -f docker-compose.prod.yml ps
+                            sudo -n docker compose -f docker-compose.prod.yml build --progress=plain backend && \
+                            sudo -n docker compose -f docker-compose.prod.yml build --progress=plain frontend && \
+                            sudo -n docker compose -f docker-compose.prod.yml up -d && \
+                            sudo -n docker compose -f docker-compose.prod.yml ps
                         "
                     '''
                 }
