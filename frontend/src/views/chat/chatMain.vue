@@ -16,14 +16,15 @@
           type="textarea"
           placeholder="输入消息..."
           :autosize="{ minRows: 1, maxRows: 4 }"
+          :disabled="isSending"
           @keydown.enter.prevent="sendMessage"
           size="large"
           rounded
           class="ask-input"
         />
 
-        <n-button type="primary" @click="sendMessage"> 发送 </n-button>
-        <button class="new-btn" @click="handleNewSession">+ 新建会话</button>
+        <n-button type="primary" :loading="isSending" @click="sendMessage"> 发送 </n-button>
+        <button class="new-btn" :disabled="isSending" @click="handleNewSession">+ 新建会话</button>
       </div>
     </div>
     <n-alert title="Warning 类型" type="warning" v-show="isWarningVisible">
@@ -38,9 +39,14 @@ import { chatStream, generateTitle } from "@/api";
 import ChatMessage from "@/components/chat/ChatMessage.vue";
 import { useChatStore } from "@/stores/modules/chatStore";
 import { useUIStore } from "@/stores/modules/uiStore";
+import { useChatFlow } from "@/composables/useChatFlow";
 import { storeToRefs } from "pinia";
 const chatStore = useChatStore();
 const uiStore = useUIStore();
+const {
+  isSending,
+  sendMessage: sendChatMessage
+} = useChatFlow();
 const { isWarningVisible } = storeToRefs(uiStore);
 const messages = ref([
   {
@@ -102,13 +108,21 @@ const sendMessage = async () => {
 
     const value = newMessage.value.trim()
 
-    if (!value) return
+    if (!value || isSending.value) return
 
-    await handleUserMessage(value)
+    newMessage.value = ""
+    await scrollToBottom()
 
-    createAIMessage()
-
-    await handleStream(value)
+    try {
+      await sendChatMessage(
+        value,
+        {
+          onEvent: scrollToBottom
+        }
+      )
+    } catch {
+      await scrollToBottom()
+    }
 
 }
 // const sendMessage = async () => {

@@ -2,20 +2,31 @@
   <div class="home">
     <!-- 🌌 Hero 区 -->
     <section class="hero">
+      <p class="eyebrow">PERSONAL KNOWLEDGE AGENT</p>
+
       <h1 class="title">
-        你的专属 AI 知识助手
+        让你的知识，成为 AI 的答案
       </h1>
 
       <p class="subtitle">
-        构建属于你的知识问答系统 · 支持多会话 · 流式响应 · LangChain驱动
+        从资料入库、智能切分到混合检索与来源引用，
+        构建可追溯、可调试、可扩展的个人知识问答系统。
       </p>
+
+      <div class="tech-stack" aria-label="核心技术栈">
+        <span>Vue 3</span>
+        <span>FastAPI</span>
+        <span>LangGraph</span>
+        <span>ChromaDB</span>
+        <span>MCP</span>
+      </div>
 
       <div class="actions">
         <button class="primary" @click="goChat">
-          🚀 开始对话
+          🚀 进入知识问答
         </button>
-        <button class="secondary" @click="goLangchain">
-          🧠 LangChain练习
+        <button class="secondary" @click="goKnowledgeBase">
+          📚 管理知识库
         </button>
       </div>
     </section>
@@ -24,27 +35,27 @@
     <section class="features">
       <div class="card">
         <div class="icon">💬</div>
-        <h3>智能问答</h3>
-        <p>支持流式输出 + 打字机效果，让对话更自然</p>
+        <h3>流式 Agent 对话</h3>
+        <p>基于 LangGraph 编排对话与工具调用，通过 SSE 实时返回答案、状态和引用来源。</p>
       </div>
 
       <div class="card">
-        <div class="icon">📚</div>
-        <h3>知识管理</h3>
-        <p>多会话隔离，打造你的专属知识空间</p>
+        <div class="icon">🔎</div>
+        <h3>混合 RAG 检索</h3>
+        <p>融合向量召回、BM25 与 RRF 排序，结合 Parent-Child Chunk 找准内容并保留上下文。</p>
       </div>
 
       <div class="card">
-        <div class="icon">🧠</div>
-        <h3>LangChain驱动</h3>
-        <p>支持Prompt工程 & Agent扩展能力</p>
+        <div class="icon">🧩</div>
+        <h3>知识处理闭环</h3>
+        <p>支持 PDF、Word、Markdown、文本与代码资料，并提供切块预览和检索链路调试。</p>
       </div>
     </section>
 
     <!-- 🌙 底部 -->
     <section class="footer">
       <p>
-        Built with Vue3 · FastAPI · LangChain
+        Vue 3 + Pinia · FastAPI · LangChain / LangGraph · ChromaDB · PostgreSQL
       </p>
     </section>
   </div>
@@ -59,8 +70,8 @@ const goChat = () => {
   router.push("/qa/chat");
 };
 
-const goLangchain = () => {
-  router.push("/langchain");
+const goKnowledgeBase = () => {
+  router.push("/kb");
 };
 </script>
 
@@ -72,12 +83,21 @@ const goLangchain = () => {
   gap: 60px;
   padding: 60px 20px;
   color: #eef1ff;
+  overflow-y: auto;
 }
 
 /* 🌌 Hero */
 .hero {
   text-align: center;
   margin-top: 40px;
+}
+
+.eyebrow {
+  margin-bottom: 14px;
+  color: #65ddf4;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
 }
 
 .title {
@@ -90,8 +110,29 @@ const goLangchain = () => {
 
 .subtitle {
   margin-top: 16px;
+  margin-inline: auto;
+  max-width: 760px;
   font-size: 1.1rem;
+  line-height: 1.85;
   opacity: 0.75;
+}
+
+.tech-stack {
+  margin-top: 22px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tech-stack span {
+  padding: 5px 10px;
+  border: 1px solid rgba(122, 92, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(238, 241, 255, 0.68);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
 }
 
 .actions {
@@ -138,7 +179,7 @@ button {
 }
 
 .card {
-  width: 240px;
+  width: 280px;
   padding: 22px;
   border-radius: 18px;
   background: rgba(255,255,255,0.05);
@@ -163,6 +204,7 @@ button {
 
 .card p {
   font-size: 0.9rem;
+  line-height: 1.75;
   opacity: 0.7;
 }
 
@@ -171,5 +213,62 @@ button {
   text-align: center;
   opacity: 0.5;
   font-size: 0.9rem;
+}
+
+@media (max-width: 720px) {
+  .home {
+    gap: 40px;
+    padding: 38px 18px 28px;
+  }
+
+  .hero {
+    margin-top: 16px;
+  }
+
+  .title {
+    font-size: clamp(2rem, 10vw, 2.6rem);
+    line-height: 1.2;
+  }
+
+  .subtitle {
+    font-size: 0.95rem;
+    line-height: 1.75;
+  }
+
+  .actions {
+    width: 100%;
+    max-width: 360px;
+    margin-inline: auto;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .actions button {
+    width: 100%;
+    min-height: 46px;
+  }
+
+  .features {
+    gap: 14px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 420px;
+    padding: 20px;
+  }
+
+  .footer {
+    padding-inline: 10px;
+    font-size: 0.78rem;
+    line-height: 1.7;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  .card {
+    transition: none;
+  }
 }
 </style>

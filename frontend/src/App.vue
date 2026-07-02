@@ -71,7 +71,12 @@
         </div>
       </header>
 
-      <main class="content">
+      <main
+        :class="[
+          'content',
+          { 'content--scrollable': route.meta.scrollPage }
+        ]"
+      >
         <router-view />
       </main>
     </div>
@@ -252,6 +257,81 @@ const handleLogout = async () => {
 }
 
 @media (max-width: 720px) {
+  .layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    padding: 8px 10px;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .sidebar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .logo-box,
+  .menu,
+  .menu-group,
+  .menu-item {
+    flex-shrink: 0;
+  }
+
+  .logo {
+    width: 68px;
+    height: 36px;
+    padding: 2px;
+    border-radius: 8px;
+  }
+
+  .menu {
+    flex-direction: row;
+    gap: 4px;
+  }
+
+  .menu-group {
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .menu-group-title {
+    display: none;
+  }
+
+  .menu-item,
+  .menu-group .menu-item {
+    padding: 8px 10px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+
+  .menu-group .menu-item::before {
+    display: none;
+  }
+
+  .main {
+    width: 100%;
+    min-height: 0;
+  }
+
+  .topbar {
+    padding: 10px 14px;
+  }
+
+  .topbar-title {
+    margin-left: 0;
+    font-size: 0.95rem;
+  }
+
   .account-copy {
     display: none;
   }
@@ -259,10 +339,16 @@ const handleLogout = async () => {
 
 .content {
   flex: 1;
+  min-height: 0;
   box-sizing: border-box;
   overflow: hidden; /* 这里禁止浏览器滚动 */
   width: 100%;
   margin: 0 auto;
+}
+
+.content--scrollable {
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 .topbar-title span {
   opacity: 0.7;

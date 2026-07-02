@@ -144,14 +144,18 @@ export const useChatStore = defineStore("chat", {
         messageIndexCounter: 1 // ✅ 从1开始
       })
       this.currentSessionId = id
+      return id
     },
     switchSession(id) {
       this.currentSessionId = id
     },
+    getSession(sessionId = this.currentSessionId) {
+      return this.sessions.find(
+        session => session.id === sessionId
+      ) || null
+    },
     getCurrentSession() {
-      const session = this.sessions.find(
-        s => s.id === this.currentSessionId
-      )
+      const session = this.getSession()
 
       if (!session) {
         console.warn("⚠️ 当前 session 不存在")
@@ -164,8 +168,8 @@ export const useChatStore = defineStore("chat", {
 
       return session
     },
-    getNextMessageIndex() {
-      const session = this.getCurrentSession()
+    getNextMessageIndex(sessionId = this.currentSessionId) {
+      const session = this.getSession(sessionId)
       if (!session) return 0
 
       const index = session.messageIndexCounter
@@ -181,17 +185,17 @@ export const useChatStore = defineStore("chat", {
       }
     },
 
-    addUserMessage(content) {
-      this.currentSession?.messages.push(content)
+    addUserMessage(content, sessionId = this.currentSessionId) {
+      this.getSession(sessionId)?.messages.push(content)
     },
 
-    addAIMessage(msg) {
-      this.currentSession?.messages.push(msg)
+    addAIMessage(msg, sessionId = this.currentSessionId) {
+      this.getSession(sessionId)?.messages.push(msg)
       return msg
     },
     // 更新 AI 消息（流式更新）
-    updateAIMessage(event) {
-      const msgs = this.currentMessages
+    updateAIMessage(event, sessionId = this.currentSessionId) {
+      const msgs = this.getSession(sessionId)?.messages || []
 
       if (!msgs.length) return
 
@@ -263,9 +267,12 @@ export const useChatStore = defineStore("chat", {
       }
     },
     // 结束 AI 消息（流式更新结束）
-    finishAIMessage(event = {}) {
+    finishAIMessage(
+      event = {},
+      sessionId = this.currentSessionId
+    ) {
       console.log(event,'finishAIMessage')
-      const msgs = this.currentMessages
+      const msgs = this.getSession(sessionId)?.messages || []
 
       if (!msgs.length) return
 
@@ -288,11 +295,70 @@ export const useChatStore = defineStore("chat", {
       }
 
     },
+    handleStreamEvent(
+      event = {},
+      sessionId = this.currentSessionId
+    ) {
+      switch (event.type) {
+        case "stream":
+          this.updateAIMessage(
+            {
+              type: "token",
+              content: event.data?.answer || ""
+            },
+            sessionId
+          )
+          break
+
+        case "tool_start":
+        case "tool_end":
+          this.updateAIMessage(
+            {
+              ...event,
+              tool_name:
+                event.tool_name
+                || event.data?.tool
+                || event.data?.tool_name
+            },
+            sessionId
+          )
+          break
+
+        case "sources":
+          this.updateAIMessage(
+            event,
+            sessionId
+          )
+          break
+
+        case "start":
+          this.updateAIMessage(
+            { type: "graph_start" },
+            sessionId
+          )
+          break
+
+        case "end":
+          this.finishAIMessage(
+            event.data || {},
+            sessionId
+          )
+          break
+      }
+    },
     updateSessionTitle(sessionId, title) {
       const session = this.sessions.find(s => s.id === sessionId);
       if (session) {
         session.title = title;
       }
+    },
+    persistSessions() {
+      if (typeof window === "undefined") return
+
+      localStorage.setItem(
+        "sessions",
+        JSON.stringify(this.sessions)
+      )
     },
     setKeyword(keyword) {
       this.keyword = keyword

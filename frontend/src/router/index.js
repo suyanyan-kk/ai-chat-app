@@ -33,6 +33,15 @@ const routes = [
     component: Home,
     meta: { title: '首页' }
   },
+  {
+    path: '/langchain',
+    name: 'langchainPractice',
+    component: LangchainPractice,
+    meta: {
+      title: 'LangChain',
+      scrollPage: true
+    }
+  },
 
   // ⭐ 问答模块（带二级路由）
   {
@@ -73,12 +82,6 @@ const routes = [
   name: "retrievalDebug",
   meta: { title: "检索调试" }
 }, 
-  {
-    path: '/langchain',
-    name: 'langchainPractice',
-    component: LangchainPractice,
-    meta: { title: 'LangChain' }
-  },
   {
     path: '/about',
     name: 'about',
