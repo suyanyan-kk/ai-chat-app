@@ -1,0 +1,93 @@
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: ai_postgres
+    restart: always
+
+    environment:
+      POSTGRES_DB: ai_service
+      POSTGRES_USER: ai_user
+      POSTGRES_PASSWORD: ai_password
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    networks:
+      - ai_network
+
+
+  backend:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+
+    container_name: ai_backend
+    restart: always
+
+    env_file:
+      - ./ai-service/.env.production
+
+    volumes:
+      - backend_data:/app/data
+
+    depends_on:
+      - postgres
+
+    networks:
+      - ai_network
+
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+
+    container_name: ai_frontend
+    restart: always
+
+    depends_on:
+      - backend
+
+    networks:
+      - ai_network
+
+
+  caddy:
+    image: caddy:2
+    container_name: ai_caddy
+    restart: always
+
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:-http://localhost}
+
+    ports:
+      - "80:80"
+      - "443:443"
+
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+
+    depends_on:
+      - frontend
+      - backend
+
+    networks:
+      - ai_network
+
+
+volumes:
+  postgres_data:
+  backend_data:
+  caddy_data:
+  caddy_config:
+
+
+networks:
+  ai_network:
+    driver: bridge

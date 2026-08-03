@@ -97,7 +97,7 @@ class Settings:
 
     CHROMA_PERSIST_DIR: str = os.getenv(
         "CHROMA_PERSIST_DIR",
-        str(BASE_DIR / "chroma_db")
+        str(BASE_DIR / "data" / "chroma_db")
     )
 
     # =========================
@@ -106,7 +106,7 @@ class Settings:
 
     UPLOAD_DIR: str = os.getenv(
         "UPLOAD_DIR",
-        str(BASE_DIR / "app" / "rag" / "uploads")
+        str(BASE_DIR / "data" / "uploads")
     )
 
     # =========================

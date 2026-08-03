@@ -12,6 +12,7 @@ pipeline {
     }
 
     stages {
+
         stage('Check Branch') {
             steps {
                 script {
@@ -25,17 +26,21 @@ pipeline {
                     echo "Deploy branch: ${DEPLOY_BRANCH}"
 
                     if (currentBranch != DEPLOY_BRANCH) {
-                        error("当前分支 ${currentBranch} 不是上线分支 ${DEPLOY_BRANCH}，禁止部署。")
+                        error(
+                            "当前分支 ${currentBranch} 不是上线分支 ${DEPLOY_BRANCH}，禁止部署。"
+                        )
                     }
                 }
             }
         }
+
 
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
+
 
         stage('Show Git Info') {
             steps {
@@ -48,6 +53,7 @@ pipeline {
                 '''
             }
         }
+
 
         stage('Upload Code To Server') {
             steps {
@@ -74,35 +80,124 @@ pipeline {
             }
         }
 
-        stage('Deploy With Docker Compose') {
+
+        stage('Validate Deploy Config') {
             steps {
                 sshagent(credentials: ["${SSH_CREDENTIALS_ID}"]) {
                     sh '''
-                        ssh -o StrictHostKeyChecking=accept-new ${DEPLOY_USER}@${DEPLOY_HOST} "
+                        ssh -o StrictHostKeyChecking=accept-new \
+                          ${DEPLOY_USER}@${DEPLOY_HOST} "
                             cd ${DEPLOY_DIR} && \
-                            sudo -n docker compose -f docker-compose.prod.yml build --progress=plain backend && \
-                            sudo -n docker compose -f docker-compose.prod.yml build --progress=plain frontend && \
-                            sudo -n docker compose -f docker-compose.prod.yml up -d && \
-                            sudo -n docker compose -f docker-compose.prod.yml ps
+                            test -f .env.production && \
+                            test -f ai-service/.env.production && \
+                            sudo -n docker compose \
+                              --env-file .env.production \
+                              -f docker-compose.yml \
+                              config > /dev/null
                         "
                     '''
                 }
             }
         }
 
-        stage('Health Check') {
+
+        stage('Deploy With Docker Compose') {
             steps {
                 sshagent(credentials: ["${SSH_CREDENTIALS_ID}"]) {
                     sh '''
-                        ssh -o StrictHostKeyChecking=accept-new ${DEPLOY_USER}@${DEPLOY_HOST} "
-                            curl -I http://127.0.0.1 && \
-                            curl -I http://127.0.0.1/api/docs
+                        ssh -o StrictHostKeyChecking=accept-new \
+                          ${DEPLOY_USER}@${DEPLOY_HOST} "
+                            cd ${DEPLOY_DIR} && \
+                            sudo -n docker compose \
+                              --env-file .env.production \
+                              -f docker-compose.yml \
+                              build --progress=plain backend && \
+                            sudo -n docker compose \
+                              --env-file .env.production \
+                              -f docker-compose.yml \
+                              build --progress=plain frontend && \
+                            sudo -n docker compose \
+                              --env-file .env.production \
+                              -f docker-compose.yml \
+                              up -d && \
+                            sudo -n docker compose \
+                              --env-file .env.production \
+                              -f docker-compose.yml \
+                              ps
                         "
                     '''
                 }
             }
         }
+
+
+        stage('Validate Caddy') {
+            steps {
+                sshagent(credentials: ["${SSH_CREDENTIALS_ID}"]) {
+                    sh '''
+                        ssh -o StrictHostKeyChecking=accept-new \
+                          ${DEPLOY_USER}@${DEPLOY_HOST} "
+                            cd ${DEPLOY_DIR} && \
+                            sudo -n docker exec ai_caddy \
+                              caddy validate \
+                              --config /etc/caddy/Caddyfile
+                        "
+                    '''
+                }
+            }
+        }
+
+
+        stage('Health Check') {
+            steps {
+                sshagent(credentials: ["${SSH_CREDENTIALS_ID}"]) {
+                    sh '''
+                        ssh -o StrictHostKeyChecking=accept-new \
+                          ${DEPLOY_USER}@${DEPLOY_HOST} '
+                            echo "===== Waiting For HTTPS ====="
+
+                            for i in $(seq 1 12); do
+
+                                if curl \
+                                  --fail \
+                                  --silent \
+                                  --show-error \
+                                  --resolve yanaihub.cn:443:127.0.0.1 \
+                                  https://yanaihub.cn/ \
+                                  -o /dev/null; then
+
+                                    echo "Frontend HTTPS health check passed."
+                                    break
+                                fi
+
+                                if [ "$i" -eq 12 ]; then
+                                    echo "Frontend HTTPS health check failed."
+                                    exit 1
+                                fi
+
+                                echo "HTTPS not ready yet. Retry $i/12..."
+                                sleep 5
+                            done
+
+
+                            echo "===== API Health Check ====="
+
+                            curl \
+                              --fail \
+                              --silent \
+                              --show-error \
+                              --resolve yanaihub.cn:443:127.0.0.1 \
+                              https://yanaihub.cn/api/docs \
+                              -o /dev/null
+
+                            echo "API HTTPS health check passed."
+                        '
+                    '''
+                }
+            }
+        }
     }
+
 
     post {
         success {
