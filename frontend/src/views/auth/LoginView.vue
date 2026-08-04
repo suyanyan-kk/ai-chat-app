@@ -101,6 +101,10 @@
           当前系统不开放自助注册，请使用管理员分配的账号。
         </p>
       </div>
+      <IcpFooter
+        class="login-icp-footer"
+        variant="light"
+      />
     </section>
   </main>
 </template>
@@ -114,6 +118,7 @@ import {
   MailOutline 
 } from "@vicons/ionicons5"
 
+import IcpFooter from "@/components/common/IcpFooter.vue"
 import { useAuthStore } from "@/stores/modules/authStore"
 import message from "@/utils/message"
 
@@ -356,12 +361,20 @@ const handleLogin = async () => {
 }
 
 .login-panel {
+  position: relative;
   min-width: 0;
-  padding: 48px;
+  padding: 48px 48px 76px;
   display: grid;
   place-items: center;
   background: #e9ebe6;
   color: #171a18;
+}
+
+.login-icp-footer {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
 }
 
 .login-form-wrap {
@@ -514,7 +527,7 @@ const handleLogin = async () => {
 
   .login-panel {
     min-height: 460px;
-    padding: 34px 24px max(40px, env(safe-area-inset-bottom));
+    padding: 34px 24px max(82px, env(safe-area-inset-bottom));
     place-items: start center;
   }
 
@@ -559,7 +572,7 @@ const handleLogin = async () => {
 
   .login-panel {
     min-height: 440px;
-    padding: 28px 20px max(32px, env(safe-area-inset-bottom));
+    padding: 28px 20px max(76px, env(safe-area-inset-bottom));
   }
 
   .login-heading h2 {

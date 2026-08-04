@@ -79,6 +79,7 @@
       >
         <router-view />
       </main>
+      <IcpFooter class="layout-icp-footer" />
     </div>
   </div>
   </n-message-provider>
@@ -89,6 +90,7 @@ import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { LogOutOutline } from "@vicons/ionicons5";
 
+import IcpFooter from "@/components/common/IcpFooter.vue";
 import { useAuthStore } from "@/stores/modules/authStore";
 
 const route = useRoute();
@@ -350,6 +352,11 @@ const handleLogout = async () => {
   overflow-x: hidden;
   overflow-y: auto;
 }
+
+.layout-icp-footer {
+  flex-shrink: 0;
+}
+
 .topbar-title span {
   opacity: 0.7;
 }
