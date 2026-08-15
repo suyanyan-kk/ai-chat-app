@@ -86,7 +86,10 @@ const routes = [
     path: '/about',
     name: 'about',
     component: About,
-    meta: { title: '关于' }
+    meta: {
+      title: '关于',
+      scrollPage: true
+    }
   },
 
   {

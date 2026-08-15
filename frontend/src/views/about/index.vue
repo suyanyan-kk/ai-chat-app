@@ -80,8 +80,9 @@
 
 <style scoped>
 .about-page {
-  padding: 30px;
-  max-width: 900px;
+  width: min(100%, 900px);
+  min-height: 100%;
+  padding: clamp(34px, 5vh, 48px) 30px 48px;
   margin: 0 auto;
   color: #eef1ff;
 }
@@ -90,10 +91,14 @@
 .hero {
   text-align: center;
   margin-bottom: 40px;
+  padding-top: 2px;
 }
 
 .title {
+  margin: 0;
   font-size: 2.4rem;
+  line-height: 1.25;
+  padding-bottom: 0.08em;
   background: linear-gradient(135deg, #7a5cff, #3ae4ff);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -146,5 +151,19 @@
   margin-top: 40px;
   opacity: 0.5;
   font-size: 0.9rem;
+}
+
+@media (max-width: 720px) {
+  .about-page {
+    padding: 28px 18px 40px;
+  }
+
+  .hero {
+    margin-bottom: 30px;
+  }
+
+  .title {
+    font-size: clamp(2rem, 10vw, 2.4rem);
+  }
 }
 </style>
