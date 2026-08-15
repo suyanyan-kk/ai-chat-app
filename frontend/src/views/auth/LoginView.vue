@@ -129,7 +129,7 @@ const router = useRouter()
 const formRef = ref(null)
 
 const form = reactive({
-  email: "admin@yanaihub.cn",
+  email: "",
   password: ""
 })
 
