@@ -54,7 +54,7 @@
           >
             <n-input
               v-model:value="form.email"
-              placeholder="admin@yanaihub.cn"
+              placeholder="admin@yanaihub.cn" 
               autocomplete="email"
               :disabled="authStore.loading"
             >
