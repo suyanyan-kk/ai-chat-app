@@ -3,13 +3,27 @@
     :class="['icp-footer', `icp-footer--${variant}`]"
     aria-label="备案信息"
   >
-    <span>技术分享 · yanaihub.cn</span>
+    <span class="icp-footer__brand">技术分享 · yanaihub.cn</span>
     <a
+      class="icp-footer__link"
       href="https://beian.miit.gov.cn/"
       target="_blank"
       rel="noopener noreferrer"
     >
       京ICP备2026046046号-1
+    </a>
+    <a
+      class="icp-footer__link icp-footer__police"
+      href="https://beian.mps.gov.cn/#/query/webSearch?code=11010502062236"
+      rel="noreferrer"
+      target="_blank"
+    >
+      <img
+        class="icp-footer__police-icon"
+        src="@/assets/beian-police.png"
+        alt="公安备案图标"
+      />
+      <span>京公网安备11010502062236号</span>
     </a>
   </footer>
 </template>
@@ -49,6 +63,21 @@ defineProps({
 
 .icp-footer a:hover {
   opacity: 0.82;
+}
+
+.icp-footer__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.icp-footer__police-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  object-fit: contain;
 }
 
 .icp-footer--dark {
