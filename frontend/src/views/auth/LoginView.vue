@@ -24,8 +24,12 @@
 
       <div class="identity-copy">
         <span class="system-label">AI KNOWLEDGE CONSOLE</span>
-        <h1>欢迎回来</h1>
-        <p>登录后进入你的 AI 工作台。</p>
+        <h1>{{ isRegister ? "开始学习" : "欢迎回来" }}</h1>
+        <p>
+          {{ isRegister
+            ? "创建账号，把你的资料变成可理解的知识。"
+            : "登录后进入你的 AI 工作台。" }}
+        </p>
       </div>
 
       <div class="system-status">
@@ -37,8 +41,8 @@
     <section class="login-panel">
       <div class="login-form-wrap">
         <div class="login-heading">
-          <span>SECURE ACCESS</span>
-          <h2>账号登录</h2>
+          <span>{{ isRegister ? "CREATE ACCOUNT" : "SECURE ACCESS" }}</span>
+          <h2>{{ isRegister ? "创建账号" : "账号登录" }}</h2>
         </div>
 
         <n-form
@@ -46,8 +50,27 @@
           :model="form"
           :rules="rules"
           size="large"
-          @submit.prevent="handleLogin"
+          @submit.prevent="handleSubmit"
         >
+          <n-form-item
+            v-if="isRegister"
+            label="名称"
+            path="display_name"
+          >
+            <n-input
+              v-model:value="form.display_name"
+              placeholder="你的名称"
+              autocomplete="name"
+              maxlength="100"
+              show-count
+              :disabled="authStore.loading"
+            >
+              <template #prefix>
+                <n-icon :component="PersonOutline" />
+              </template>
+            </n-input>
+          </n-form-item>
+
           <n-form-item
             label="邮箱"
             path="email"
@@ -73,9 +96,29 @@
               type="password"
               show-password-on="click"
               placeholder="8个8"
-              autocomplete="current-password"
+              :autocomplete="isRegister ? 'new-password' : 'current-password'"
               :disabled="authStore.loading"
-              @keyup.enter="handleLogin"
+              @keyup.enter="handleSubmit"
+            >
+              <template #prefix>
+                <n-icon :component="LockClosedOutline" />
+              </template>
+            </n-input>
+          </n-form-item>
+
+          <n-form-item
+            v-if="isRegister"
+            label="确认密码"
+            path="confirm_password"
+          >
+            <n-input
+              v-model:value="form.confirm_password"
+              type="password"
+              show-password-on="click"
+              placeholder="再次输入密码"
+              autocomplete="new-password"
+              :disabled="authStore.loading"
+              @keyup.enter="handleSubmit"
             >
               <template #prefix>
                 <n-icon :component="LockClosedOutline" />
@@ -90,15 +133,18 @@
             :loading="authStore.loading"
             class="login-button"
           >
-            登录
+            {{ isRegister ? "注册并进入" : "登录" }}
             <template #icon>
               <n-icon :component="ArrowForwardOutline" />
             </template>
           </n-button>
         </n-form>
 
-        <p class="login-note">
-          当前系统不开放自助注册，请使用管理员分配的账号。
+        <p class="login-note auth-switch">
+          {{ isRegister ? "已有账号？" : "还没有账号？" }}
+          <router-link :to="isRegister ? '/login' : '/register'">
+            {{ isRegister ? "返回登录" : "立即注册" }}
+          </router-link>
         </p>
       </div>
       <IcpFooter
@@ -110,12 +156,13 @@
 </template>
 
 <script setup>
-import { reactive, ref } from "vue"
+import { computed, reactive, ref } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import {
   ArrowForwardOutline,
   LockClosedOutline,
-  MailOutline 
+  MailOutline,
+  PersonOutline
 } from "@vicons/ionicons5"
 
 import IcpFooter from "@/components/common/IcpFooter.vue"
@@ -127,13 +174,24 @@ const authStore = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 const formRef = ref(null)
+const isRegister = computed(() => route.name === "register")
 
 const form = reactive({
+  display_name: "",
   email: "",
-  password: ""
+  password: "",
+  confirm_password: ""
 })
 
 const rules = {
+  display_name: [
+    {
+      required: true,
+      validator: (_rule, value) => Boolean(value?.trim()),
+      message: "请输入名称",
+      trigger: ["input", "blur"]
+    }
+  ],
   email: [
     {
       required: true,
@@ -157,25 +215,60 @@ const rules = {
       message: "密码至少需要 8 个字符",
       trigger: ["input", "blur"]
     }
+  ],
+  confirm_password: [
+    {
+      required: true,
+      message: "请再次输入密码",
+      trigger: ["input", "blur"]
+    },
+    {
+      validator: (_rule, value) => value === form.password,
+      message: "两次输入的密码不一致",
+      trigger: ["input", "blur"]
+    }
   ]
 }
 
 
 const handleLogin = async () => {
+  await formRef.value?.validate()
+  await authStore.login({
+    email: form.email,
+    password: form.password
+  })
+
+  const redirect = typeof route.query.redirect === "string"
+    ? route.query.redirect
+    : "/"
+
+  await router.replace(redirect)
+}
+
+const handleRegister = async () => {
+  await formRef.value?.validate()
+  await authStore.register({
+    display_name: form.display_name.trim(),
+    email: form.email,
+    password: form.password
+  })
+  message.success("注册成功")
+  await router.replace("/")
+}
+
+const handleSubmit = async () => {
   try {
-    await formRef.value?.validate()
-    await authStore.login(form)
+    if (isRegister.value) {
+      await handleRegister()
+      return
+    }
 
-    const redirect = typeof route.query.redirect === "string"
-      ? route.query.redirect
-      : "/"
-
-    await router.replace(redirect)
+    await handleLogin()
   } catch (error) {
     if (Array.isArray(error)) return
 
     message.error(
-      error.message || "登录失败"
+      error.message || (isRegister.value ? "注册失败" : "登录失败")
     )
   }
 }
@@ -417,6 +510,17 @@ const handleLogin = async () => {
   color: #667068;
   font-size: 13px;
   line-height: 1.7;
+}
+
+.auth-switch a {
+  margin-left: 4px;
+  color: #1f6d3d;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-switch a:hover {
+  text-decoration: underline;
 }
 
 :deep(.n-form-item-label) {

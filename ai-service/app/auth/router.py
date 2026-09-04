@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.auth.config import (
     ACCESS_TOKEN_TTL_SECONDS,
     LOGIN_WINDOW_SECONDS,
+    REGISTER_WINDOW_SECONDS,
     REFRESH_COOKIE_NAME,
     REFRESH_COOKIE_SAMESITE,
     REFRESH_COOKIE_SECURE,
@@ -25,15 +26,18 @@ from app.auth.dependencies import (
 from app.auth.models import AuthUser
 from app.auth.rate_limit import (
     login_rate_limiter,
+    registration_rate_limiter,
 )
 from app.auth.schemas import (
     AuthResponse,
     LoginRequest,
     MessageResponse,
+    RegisterRequest,
     UserResponse,
 )
 from app.auth.service import (
     authenticate_credentials,
+    create_user,
     create_session,
     revoke_refresh_token,
     rotate_refresh_token,
@@ -85,6 +89,12 @@ def login_key(
     )
 
 
+def registration_key(
+    request: Request,
+) -> str:
+    return get_client_ip(request) or "unknown"
+
+
 def set_refresh_cookie(
     response: Response,
     refresh_token: str,
@@ -132,6 +142,71 @@ def disable_auth_response_cache(
         "Cache-Control"
     ] = "no-store"
     response.headers["Pragma"] = "no-cache"
+
+
+@router.post(
+    "/register",
+    response_model=AuthResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def register(
+    data: RegisterRequest,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_auth_db),
+):
+    disable_auth_response_cache(response)
+    key = registration_key(request)
+
+    if registration_rate_limiter.is_blocked(key):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="注册尝试过多，请稍后再试",
+            headers={
+                "Retry-After": str(
+                    REGISTER_WINDOW_SECONDS
+                )
+            },
+        )
+
+    registration_rate_limiter.record_failure(key)
+
+    try:
+        user = create_user(
+            db,
+            email=data.email,
+            password=data.password,
+            display_name=data.display_name,
+            role_code="member",
+            is_superuser=False,
+        )
+    except ValueError as exc:
+        detail = str(exc)
+        code = (
+            status.HTTP_409_CONFLICT
+            if detail == "该邮箱已存在"
+            else status.HTTP_400_BAD_REQUEST
+        )
+        raise HTTPException(
+            status_code=code,
+            detail=detail,
+        ) from exc
+
+    tokens = create_session(
+        db,
+        user=user,
+        ip_address=get_client_ip(request),
+        user_agent=get_user_agent(request),
+    )
+    set_refresh_cookie(
+        response,
+        tokens.refresh_token,
+    )
+
+    return build_auth_response(
+        tokens.access_token,
+        user,
+    )
 
 
 @router.post(

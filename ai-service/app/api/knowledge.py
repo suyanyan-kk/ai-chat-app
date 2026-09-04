@@ -7,6 +7,8 @@ from app.knowledgedb import models, schemas
 from app.knowledgedb.db import SessionLocal, engine
 from app.rag.file.file_service import save_upload_file
 from app.rag.vectorstore.chroma_service import vector_store
+from app.auth.dependencies import get_current_user, require_permissions
+from app.auth.models import AuthUser
 
 # 创建表（自动）如果表不存在 → 自动创建 
 models.Base.metadata.create_all(bind=engine)
@@ -26,15 +28,43 @@ def get_db():
 
 # 1. 读取（Read）
 @router.get("/getKnowledge")
-def get_all(db: Session = Depends(get_db)):
+def get_all(
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(get_current_user),
+):
     # print(dir(db.query(models.Knowledge).all()),'1222')
-    return db.query(models.Knowledge).all()
+    return (
+        db.query(models.Knowledge)
+        .filter(models.Knowledge.user_id == current_user.id)
+        .all()
+    )
 
 
 # 2. 创建（Create）
 @router.post("/addKnowledge", status_code=status.HTTP_201_CREATED)
 #  ** （解构）把 data 对象的属性解构成一个个参数传给 Knowledge 构造函数
-def create_knowledge(data: schemas.KnowledgeCreate, db: Session = Depends(get_db)):
+def create_knowledge(
+    data: schemas.KnowledgeCreate,
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(
+        require_permissions("knowledge.write")
+    ),
+):
+    if data.parent_id is not None:
+        parent = (
+            db.query(models.Knowledge)
+            .filter(
+                models.Knowledge.id == data.parent_id,
+                models.Knowledge.user_id == current_user.id,
+            )
+            .first()
+        )
+        if parent is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="父节点不存在",
+            )
+
     if data.type == "file":
         if not data.file_id:
             raise HTTPException(
@@ -42,9 +72,13 @@ def create_knowledge(data: schemas.KnowledgeCreate, db: Session = Depends(get_db
                 detail="文件节点必须关联已上传的文件",
             )
 
-        file_item = db.get(
-            models.KnowledgeFile,
-            data.file_id,
+        file_item = (
+            db.query(models.KnowledgeFile)
+            .filter(
+                models.KnowledgeFile.id == data.file_id,
+                models.KnowledgeFile.user_id == current_user.id,
+            )
+            .first()
         )
 
         if not file_item:
@@ -53,7 +87,10 @@ def create_knowledge(data: schemas.KnowledgeCreate, db: Session = Depends(get_db
                 detail="关联的上传文件不存在",
             )
 
-    item = models.Knowledge(**data.dict())
+    item = models.Knowledge(
+        **data.model_dump(),
+        user_id=current_user.id,
+    )
     # ORM = 把“数据库操作”变成“操作对象”
     # print(item.__dict__)
     db.add(item)
@@ -67,11 +104,58 @@ def create_knowledge(data: schemas.KnowledgeCreate, db: Session = Depends(get_db
 # data.dict(exclude_unset=True) 只更新传了的字段，没传的字段保持不变
 @router.put("/updateKnowledge/{id}")
 def update_knowledge(
-    id: int, data: schemas.KnowledgeCreate, db: Session = Depends(get_db)
+    id: int,
+    data: schemas.KnowledgeCreate,
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(
+        require_permissions("knowledge.write")
+    ),
 ):
-    item = db.query(models.Knowledge).get(id)
+    item = (
+        db.query(models.Knowledge)
+        .filter(
+            models.Knowledge.id == id,
+            models.Knowledge.user_id == current_user.id,
+        )
+        .first()
+    )
+    if item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="节点不存在",
+        )
 
-    for key, value in data.dict(exclude_unset=True).items():
+    if data.parent_id is not None:
+        parent = (
+            db.query(models.Knowledge)
+            .filter(
+                models.Knowledge.id == data.parent_id,
+                models.Knowledge.user_id == current_user.id,
+            )
+            .first()
+        )
+        if parent is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="父节点不存在",
+            )
+
+    if data.type == "file":
+        file_item = (
+            db.query(models.KnowledgeFile)
+            .filter(
+                models.KnowledgeFile.id == data.file_id,
+                models.KnowledgeFile.user_id == current_user.id,
+            )
+            .first()
+        )
+        if file_item is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="关联的上传文件不存在",
+            )
+
+    for key, value in data.model_dump(exclude_unset=True).items():
         setattr(item, key, value)
 
     db.commit()
@@ -80,10 +164,23 @@ def update_knowledge(
 
 # 4. 删除（Delete）
 @router.delete("/deleteKnowledge/{id}", status_code=status.HTTP_200_OK)
-def delete_knowledge(id: int, db: Session = Depends(get_db)):
+def delete_knowledge(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(
+        require_permissions("knowledge.write")
+    ),
+):
     try:
         # 查询 Knowledge
-        item = db.get(models.Knowledge, id)
+        item = (
+            db.query(models.Knowledge)
+            .filter(
+                models.Knowledge.id == id,
+                models.Knowledge.user_id == current_user.id,
+            )
+            .first()
+        )
 
         if not item:
             return {
@@ -110,14 +207,19 @@ def delete_knowledge(id: int, db: Session = Depends(get_db)):
         # =========================
 
         # 查询文件
-        file = db.get(
-            models.KnowledgeFile,
-            item.file_id
+        file = (
+            db.query(models.KnowledgeFile)
+            .filter(
+                models.KnowledgeFile.id == item.file_id,
+                models.KnowledgeFile.user_id == current_user.id,
+            )
+            .first()
         )
 
         # 查询该文件所有 chunk
         chunks = db.query(models.KnowledgeChunk).filter(
-            models.KnowledgeChunk.file_id == item.file_id
+            models.KnowledgeChunk.file_id == item.file_id,
+            models.KnowledgeChunk.user_id == current_user.id,
         ).all()
 
         # 获取 vector_id
@@ -143,7 +245,8 @@ def delete_knowledge(id: int, db: Session = Depends(get_db)):
 
         # 删除 chunk 表
         db.query(models.KnowledgeChunk).filter(
-            models.KnowledgeChunk.file_id == item.file_id
+            models.KnowledgeChunk.file_id == item.file_id,
+            models.KnowledgeChunk.user_id == current_user.id,
         ).delete()
 
         # 删除本地文件
@@ -174,9 +277,19 @@ def delete_knowledge(id: int, db: Session = Depends(get_db)):
         }
 
 @router.post("/uploadKnowledgeFile", response_model=schemas.UploadResponse)
-async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_file(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(
+        require_permissions("knowledge.write")
+    ),
+):
     print("接收到文件:", file.filename)
-    result = await save_upload_file(file, db)
+    result = await save_upload_file(
+        file,
+        db,
+        current_user.id,
+    )
     print("文件上传完成:", result)
     return {"code": 0, "message": "上传成功", "data": result}
 
@@ -185,13 +298,15 @@ async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db
 @router.get("/getKnowledgeDetailByFileId/{file_id}")
 def get_knowledge_detail_by_file_id(
     file_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(get_current_user),
 ):
 
     knowledge = db.query(
         models.Knowledge
     ).filter(
-        models.Knowledge.file_id == file_id
+        models.Knowledge.file_id == file_id,
+        models.Knowledge.user_id == current_user.id,
     ).first()
 
     if not knowledge:
@@ -215,10 +330,18 @@ def get_knowledge_detail_by_file_id(
 @router.get("/getKnowledgeDetail/{id}")
 def get_knowledge_detail(
     id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(get_current_user),
 ):
 
-    knowledge = db.get(models.Knowledge, id)
+    knowledge = (
+        db.query(models.Knowledge)
+        .filter(
+            models.Knowledge.id == id,
+            models.Knowledge.user_id == current_user.id,
+        )
+        .first()
+    )
 
     if not knowledge:
         return {
@@ -257,9 +380,13 @@ def build_knowledge_detail(
     # 文件信息
     if knowledge.file_id:
 
-        file_item = db.get(
-            models.KnowledgeFile,
-            knowledge.file_id
+        file_item = (
+            db.query(models.KnowledgeFile)
+            .filter(
+                models.KnowledgeFile.id == knowledge.file_id,
+                models.KnowledgeFile.user_id == knowledge.user_id,
+            )
+            .first()
         )
 
         if file_item:
@@ -279,10 +406,17 @@ def build_knowledge_detail(
     return result
 
 @router.get("/chunks/{file_id}")
-def get_chunks(file_id: int, db: Session = Depends(get_db)):
+def get_chunks(
+    file_id: int,
+    db: Session = Depends(get_db),
+    current_user: AuthUser = Depends(get_current_user),
+):
     chunks = (
         db.query(models.KnowledgeChunk)
-        .filter(models.KnowledgeChunk.file_id == file_id)
+        .filter(
+            models.KnowledgeChunk.file_id == file_id,
+            models.KnowledgeChunk.user_id == current_user.id,
+        )
         .order_by(models.KnowledgeChunk.chunk_index)
         .all()
     )

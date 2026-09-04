@@ -91,6 +91,7 @@ DEFAULT_ROLES = {
         "permissions": {
             "chat.use",
             "knowledge.read",
+            "knowledge.write",
             "agent.use",
             "mcp.use",
         },

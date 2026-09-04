@@ -14,7 +14,7 @@ from app.utils.parsers.parser_factory import (
 from app.core.config import settings
 
 
-async def save_upload_file(file, db):
+async def save_upload_file(file, db, user_id):
 
     print("save_upload_file:", file.filename)
 
@@ -78,6 +78,8 @@ async def save_upload_file(file, db):
     # =========================
     file_item = models.KnowledgeFile(
 
+        user_id=user_id,
+
         original_name=file.filename,
 
         uuid_name=uuid_name,
@@ -108,6 +110,8 @@ async def save_upload_file(file, db):
         db=db,
 
         file_id=file_item.id,
+
+        user_id=user_id,
 
         original_name=file.filename,
 

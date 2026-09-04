@@ -8,6 +8,12 @@ class Knowledge(Base):
 # primary_key=True主键，index=True索引，String字符串，Text长文本，Integer 数字， nullable=True允许为空
 # Text 比 String 能存更多内容 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer,
+        ForeignKey("auth_user.id"),
+        nullable=False,
+        index=True,
+    )
     title = Column(String)
     parent_id = Column(Integer, nullable=True)
     type = Column(String)  # folder / file
@@ -19,6 +25,12 @@ class Knowledge(Base):
 class KnowledgeFile(Base):
     __tablename__ = "knowledge_file"
     id = Column(Integer, primary_key=True)
+    user_id = Column(
+        Integer,
+        ForeignKey("auth_user.id"),
+        nullable=False,
+        index=True,
+    )
     original_name = Column(String)
     uuid_name = Column(String)
     file_url = Column(String)
@@ -34,6 +46,12 @@ class KnowledgeChunk(Base):
     id = Column(Integer,
         primary_key=True,#主键
         index=True #这个表会有很多条记录，建立索引可以提高查询效率
+    )
+    user_id = Column(
+        Integer,
+        ForeignKey("auth_user.id"),
+        nullable=False,
+        index=True,
     )
     # 关联文件属于哪个文件
     file_id = Column(

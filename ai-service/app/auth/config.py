@@ -61,6 +61,20 @@ LOGIN_WINDOW_SECONDS = int(
     )
 )
 
+REGISTER_MAX_ATTEMPTS = int(
+    os.getenv(
+        "AUTH_REGISTER_MAX_ATTEMPTS",
+        "5",
+    )
+)
+
+REGISTER_WINDOW_SECONDS = int(
+    os.getenv(
+        "AUTH_REGISTER_WINDOW_SECONDS",
+        "3600",
+    )
+)
+
 TRUST_PROXY_HEADERS = env_bool(
     "AUTH_TRUST_PROXY_HEADERS",
     default=False,

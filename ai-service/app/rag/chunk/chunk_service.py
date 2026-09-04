@@ -18,6 +18,7 @@ from app.rag.vectorstore.chroma_service import (
 def create_chunks( 
         db,
         file_id,
+        user_id,
         original_name,
         uuid_name,
         parsed_docs,
@@ -67,6 +68,8 @@ def create_chunks(
             source_info={
 
                 **source_info,
+
+                "user_id": user_id,
 
                 "page": doc.get("page"),
 
@@ -123,6 +126,8 @@ def create_chunks(
             chunk_item = models.KnowledgeChunk(
 
                 file_id=file_id,
+
+                user_id=user_id,
 
                 chunk_index=global_chunk_index,
 

@@ -9,6 +9,15 @@ export const login = (data) => {
   })
 }
 
+
+export const register = (data) => {
+  return request("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(data),
+    skipAuthRefresh: true
+  })
+}
+
  
 export const refreshSession = () => {
   return request("/auth/refresh", {

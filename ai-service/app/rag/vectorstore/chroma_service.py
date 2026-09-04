@@ -62,6 +62,7 @@ def save_chunks_to_chroma(chunks):
         # 再补充一些系统字段
         metadata.update({
             "chunk_id": chunk.id,
+            "user_id": chunk.user_id,
             "embedding_status": chunk.embedding_status
         })
      

@@ -1,7 +1,8 @@
 import { defineStore } from "pinia"
 
 import {
-  login as loginRequest, 
+  login as loginRequest,
+  register as registerRequest,
   logout as logoutRequest
 } from "@/api/modules/auth"
 import {
@@ -47,6 +48,21 @@ export const useAuthStore = defineStore("auth", {
 
       try {
         const data = await loginRequest(credentials)
+        setAccessToken(data.access_token)
+        this.user = data.user
+        this.initialized = true
+
+        return data.user
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async register(profile) {
+      this.loading = true
+
+      try {
+        const data = await registerRequest(profile)
         setAccessToken(data.access_token)
         this.user = data.user
         this.initialized = true

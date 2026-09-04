@@ -32,6 +32,39 @@ class LoginRequest(BaseModel):
         return email
 
 
+class RegisterRequest(LoginRequest):
+    display_name: str = Field(
+        min_length=1,
+        max_length=100,
+    )
+
+    @field_validator("display_name")
+    @classmethod
+    def validate_display_name(
+        cls,
+        value: str,
+    ) -> str:
+        display_name = value.strip()
+
+        if not display_name:
+            raise ValueError("显示名称不能为空")
+
+        return display_name
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_bytes(
+        cls,
+        value: str,
+    ) -> str:
+        if len(value.encode("utf-8")) > 72:
+            raise ValueError(
+                "密码不能超过 72 个 UTF-8 字节"
+            )
+
+        return value
+
+
 class UserResponse(BaseModel):
     model_config = ConfigDict(
         from_attributes=True

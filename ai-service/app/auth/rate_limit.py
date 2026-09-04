@@ -6,11 +6,19 @@ from time import monotonic
 from app.auth.config import (
     LOGIN_MAX_ATTEMPTS,
     LOGIN_WINDOW_SECONDS,
+    REGISTER_MAX_ATTEMPTS,
+    REGISTER_WINDOW_SECONDS,
 )
 
 
 class LoginRateLimiter:
-    def __init__(self):
+    def __init__(
+        self,
+        max_attempts: int = LOGIN_MAX_ATTEMPTS,
+        window_seconds: int = LOGIN_WINDOW_SECONDS,
+    ):
+        self._max_attempts = max_attempts
+        self._window_seconds = window_seconds
         self._attempts = defaultdict(
             deque
         )
@@ -23,7 +31,7 @@ class LoginRateLimiter:
     ) -> None:
         attempts = self._attempts[key]
         threshold = (
-            now - LOGIN_WINDOW_SECONDS
+            now - self._window_seconds
         )
 
         while (
@@ -55,7 +63,7 @@ class LoginRateLimiter:
                     key,
                     ()
                 )
-            ) >= LOGIN_MAX_ATTEMPTS
+            ) >= self._max_attempts
 
     def record_failure(
         self,
@@ -84,3 +92,7 @@ class LoginRateLimiter:
 
 
 login_rate_limiter = LoginRateLimiter()
+registration_rate_limiter = LoginRateLimiter(
+    max_attempts=REGISTER_MAX_ATTEMPTS,
+    window_seconds=REGISTER_WINDOW_SECONDS,
+)

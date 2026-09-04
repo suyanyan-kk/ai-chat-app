@@ -28,6 +28,15 @@ const routes = [
     }
   },
   {
+    path: '/register',
+    name: 'register',
+    component: LoginView,
+    meta: {
+      public: true,
+      hideInNav: true
+    }
+  },
+  {
     path: '/',
     name: 'home',
     component: Home,
@@ -112,7 +121,7 @@ router.beforeEach(async (to) => {
 
   if (to.meta.public) {
     if (
-      to.name === "login"
+      ["login", "register"].includes(to.name)
       && authStore.isAuthenticated
     ) {
       return "/"
